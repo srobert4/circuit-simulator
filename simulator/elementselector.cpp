@@ -10,8 +10,8 @@ ElementSelector::ElementSelector(
 {
     setGeometry(x, y, width, height);
     buttons = new QButtonGroup(this);
-    connect(this, SIGNAL(clicked()),
-                this, SIGNAL(slotDeselect()));
+    connect(this, SIGNAL(clickedAway()),
+                this, SLOT(slotDeselect()));
 }
 
 void ElementSelector::addButton(
@@ -29,6 +29,14 @@ void ElementSelector::addButton(
     curId++;
 }
 
+QString ElementSelector::getElementName()
+{
+    int checked = buttons->checkedId();
+    if (checked == -1)
+        return "";
+    return elementTypes[checked];
+}
+
 QString ElementSelector::getElementPath()
 {
     int checked = buttons->checkedId();
@@ -44,7 +52,9 @@ void ElementSelector::mousePressEvent(QMouseEvent *event)
 
 void ElementSelector::slotDeselect()
 {
-
+    buttons->setExclusive(false);
     QAbstractButton *checked = buttons->checkedButton();
+    if (checked == NULL) return;
     checked->setChecked(false);
+    buttons->setExclusive(true);
 }

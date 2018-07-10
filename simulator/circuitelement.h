@@ -11,9 +11,11 @@ class CircuitElement : public QWidget
 {
     Q_OBJECT
 public:
-    explicit CircuitElement(QPoint *pos,
-            int height,
+    explicit CircuitElement(
+            int x,
+            int y,
             int width,
+            int height,
             QString imagePath,
             QWidget *parent = nullptr);
 

@@ -7,6 +7,7 @@
 #include <QString>
 
 #include "circuitelement.h"
+#include "node.h"
 
 class Schematic : public QWidget
 {
@@ -30,7 +31,9 @@ public slots:
 
 private:
     QVector<CircuitElement*> *elements;
-    QPoint pos_last_click;
+    QVector<Node*> *nodes;
+    int x_last_click;
+    int y_last_click;
 };
 
 #endif // SCHEMATIC_H

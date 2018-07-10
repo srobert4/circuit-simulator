@@ -28,10 +28,12 @@ SOURCES += \
         mainwindow.cpp \
     schematic.cpp \
     circuitelement.cpp \
-    elementselector.cpp
+    elementselector.cpp \
+    node.cpp
 
 HEADERS += \
         mainwindow.h \
     schematic.h \
     circuitelement.h \
-    elementselector.h
+    elementselector.h \
+    node.h

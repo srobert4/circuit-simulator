@@ -1,9 +1,9 @@
 #include "circuitelement.h"
 
 CircuitElement::CircuitElement(
-        QPoint *pos,
-        int height,
+        int x, int y,
         int width,
+        int height,
         QString imagePath,
         QWidget *parent
 ) : QWidget(parent)
@@ -11,9 +11,9 @@ CircuitElement::CircuitElement(
     img = new QLabel(parent);
     QPixmap pm(imagePath);
     img->setPixmap(pm.scaled(width, height));
-    img->setGeometry(pos->x(), pos->y(), width, height);
+    img->setGeometry(x, y, width, height);
     img->show();
 
-    nodes.append(*pos + QPoint(0, height / 2));
-    nodes.append(*pos + QPoint(width, height / 2));
+    nodes.append(QPoint(x - width / 2, y));
+    nodes.append(QPoint(x + width / 2, y));
 }

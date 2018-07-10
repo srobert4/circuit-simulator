@@ -17,6 +17,7 @@ public:
             const QString &imgPath,
             int x, int y, int width, int height);
     QString getElementPath();
+    QString getElementName();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
