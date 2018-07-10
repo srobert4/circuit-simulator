@@ -17,21 +17,18 @@ void Node::paintEvent(QPaintEvent *)
         painter.setPen(Qt::black);
         painter.drawEllipse(center, rad, rad);
     }
-    qInfo() << "paint event";
 }
 
 void Node::enterEvent(QEvent *event)
 {
     last_event = event->type();
     update();
-    qInfo() << "enter event";
 }
 
 void Node::leaveEvent(QEvent *event)
 {
     last_event = event->type();
     update();
-    qInfo() << "exit event";
 }
 
 void Node::mousePressEvent(QMouseEvent *)

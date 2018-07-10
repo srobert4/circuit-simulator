@@ -8,24 +8,26 @@ ElementSelector::ElementSelector(
         QWidget *parent
 ) : QWidget(parent)
 {
-    setGeometry(x, y, width, height);
+//    setGeometry(x, y, width, height);
     buttons = new QButtonGroup(this);
     connect(this, SIGNAL(clickedAway()),
                 this, SLOT(slotDeselect()));
+
+    layout = new QGridLayout;
+    setLayout(layout);
 }
 
 void ElementSelector::addButton(
         const QString &elemType,
-        const QString &imgPath,
-        int x, int y, int width, int height)
+        const QString &imgPath)
 {
     QPushButton *button = new QPushButton(elemType, this);
-    button->setGeometry(x, y, width, height);
     button->setCheckable(true);
 
     buttons->addButton(button, curId);
     imagePaths[curId] = imgPath;
-    elementTypes[curId] = elemType;
+    elementTypes[curId] = elemType;    
+    layout->addWidget(button, curId, 0);
     curId++;
 }
 

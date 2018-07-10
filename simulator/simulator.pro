@@ -29,11 +29,13 @@ SOURCES += \
     schematic.cpp \
     circuitelement.cpp \
     elementselector.cpp \
-    node.cpp
+    node.cpp \
+    wire.cpp
 
 HEADERS += \
         mainwindow.h \
     schematic.h \
     circuitelement.h \
     elementselector.h \
-    node.h
+    node.h \
+    wire.h

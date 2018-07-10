@@ -1,11 +1,7 @@
 #ifndef CIRCUITELEMENT_H
 #define CIRCUITELEMENT_H
 
-#include <QWidget>
-#include <QLabel>
-#include <QVector>
-#include <QPoint>
-#include <QString>
+#include <QtWidgets>
 
 class CircuitElement : public QWidget
 {
@@ -18,10 +14,25 @@ public:
             int height,
             QString imagePath,
             QWidget *parent = nullptr);
+protected:
+    void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
 
 private:
     QLabel *img;
     QVector<QPoint> nodes;
+    QString name;
+    QString value;
+    QString units;
+
+// Dialog box
+    QDialog *dialogBox;
+    QLineEdit *nameLineEdit;
+    QLineEdit *valueLineEdit;
+    QComboBox *unitsComboBox;
+
+    QDialog *createDialogBox();
 
 signals:
 

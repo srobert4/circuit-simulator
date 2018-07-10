@@ -5,6 +5,7 @@
 
 #include "circuitelement.h"
 #include "node.h"
+#include "wire.h"
 
 class Schematic : public QWidget
 {
@@ -21,6 +22,7 @@ public:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     void paintEvent(QPaintEvent *) override;
 
 signals:
@@ -32,6 +34,7 @@ public slots:
 private:
     QVector<CircuitElement*> *elements;
     QVector<Node*> *nodes;
+    QVector<Wire*> *wires;
     int x_last_click;
     int y_last_click;
     bool drawing;

@@ -1,12 +1,7 @@
 #ifndef ELEMENTSELECTOR_H
 #define ELEMENTSELECTOR_H
 
-#include <QWidget>
-#include <QButtonGroup>
-#include <QMap>
-#include <QString>
-#include <QPushButton>
-#include <QApplication>
+#include <QtWidgets>
 
 class ElementSelector : public QWidget
 {
@@ -14,8 +9,7 @@ class ElementSelector : public QWidget
 public:
     explicit ElementSelector(int x, int y, int width, int height, QWidget *parent = nullptr);
     void addButton(const QString &elemType,
-            const QString &imgPath,
-            int x, int y, int width, int height);
+            const QString &imgPath);
     QString getElementPath();
     QString getElementName();
 
@@ -23,6 +17,7 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
 
 private:
+    QGridLayout *layout;
     QButtonGroup *buttons;
     QMap<int, QString> imagePaths;
     QMap<int, QString> elementTypes;

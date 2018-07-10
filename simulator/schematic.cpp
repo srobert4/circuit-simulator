@@ -6,7 +6,8 @@ Schematic::Schematic(int x, int y, int width, int height, QWidget *parent)
     setAcceptDrops(true);
     elements = new QVector<CircuitElement*>;
     nodes = new QVector<Node*>;
-    setGeometry(x, y, width, height);
+    wires = new QVector<Wire*>;
+//    setGeometry(x, y, width, height);
     connect(this, SIGNAL(schematicClicked()),
             parent, SLOT(slotSchematicClicked()));
 }
@@ -48,15 +49,26 @@ void Schematic::startDrawingWire(QPoint start)
     start_pos = start;
 }
 
-void Schematic::mouseMoveEvent(QMouseEvent *event) {
-    if (drawing) {
-        update();
-        cur_pos = event->pos();
-    }
+void Schematic::mouseMoveEvent(QMouseEvent *event)
+{
+    if (!drawing) return;
+    update();
+    cur_pos = event->pos();
 }
+
+void Schematic::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (!drawing) return;
+    drawing = false;
+    update();
+    Wire *wire = new Wire(start_pos, event->pos(), this);
+    wires->append(wire);
+}
+
 
 void Schematic::paintEvent(QPaintEvent *)
 {
+    if (!drawing) return;
     QPainter painter(this);
     painter.setPen(Qt::black);
     painter.drawLine(start_pos, cur_pos);
