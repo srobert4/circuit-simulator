@@ -36,4 +36,28 @@ void Schematic::addElement(QString path) {
     node_2->show();
     nodes->append(node_1);
     nodes->append(node_2);
+    connect(node_1, SIGNAL(nodeClicked(QPoint)),
+            this, SLOT(startDrawingWire(QPoint)));
+    connect(node_2, SIGNAL(nodeClicked(QPoint)),
+            this, SLOT(startDrawingWire(QPoint)));
+}
+
+void Schematic::startDrawingWire(QPoint start)
+{
+    drawing = true;
+    start_pos = start;
+}
+
+void Schematic::mouseMoveEvent(QMouseEvent *event) {
+    if (drawing) {
+        update();
+        cur_pos = event->pos();
+    }
+}
+
+void Schematic::paintEvent(QPaintEvent *)
+{
+    QPainter painter(this);
+    painter.setPen(Qt::black);
+    painter.drawLine(start_pos, cur_pos);
 }

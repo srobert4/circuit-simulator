@@ -3,29 +3,38 @@
 Node::Node(int x, int y, QWidget *parent) : QWidget(parent)
 {
     setMouseTracking(true);
-    setGeometry(x, y, 20, 20);
+    setGeometry(x - 20, y - 20, 40, 40);
+    center = QPoint(20, 20);
+    globalCenter = QPoint(x, y);
+    rad = 5;
+    show();
 }
 
 void Node::paintEvent(QPaintEvent *)
 {
-    QPainter painter(this);
-    painter.setPen(Qt::black);
-    painter.drawEllipse(0, 0, 20, 20);
+    if (last_event == QEvent::Enter) {
+        QPainter painter(this);
+        painter.setPen(Qt::black);
+        painter.drawEllipse(center, rad, rad);
+    }
+    qInfo() << "paint event";
 }
 
-//void Node::mouseMoveEvent(QMouseEvent *event)
-//{
-//    update();
-//}
-
-void Node::enterEvent(QEvent *)
+void Node::enterEvent(QEvent *event)
 {
+    last_event = event->type();
     update();
     qInfo() << "enter event";
 }
 
-void Node::leaveEvent(QEvent *)
+void Node::leaveEvent(QEvent *event)
 {
-    hide();
+    last_event = event->type();
+    update();
     qInfo() << "exit event";
+}
+
+void Node::mousePressEvent(QMouseEvent *)
+{
+    emit nodeClicked(globalCenter);
 }

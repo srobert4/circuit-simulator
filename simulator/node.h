@@ -10,10 +10,19 @@ public:
     explicit Node(int x, int y, QWidget *parent = nullptr);
 
 protected:
-//    void mouseMoveEvent(QMouseEvent *event) override;
     void paintEvent(QPaintEvent *) override;
-    void enterEvent(QEvent *) override;
-    void leaveEvent(QEvent *) override;
+    void enterEvent(QEvent *event) override;
+    void leaveEvent(QEvent *event) override;
+    void mousePressEvent(QMouseEvent *) override;
+
+private:
+    QEvent::Type last_event;
+    QPoint center;
+    QPoint globalCenter;
+    int rad;
+
+signals:
+    void nodeClicked(QPoint center);
 };
 
 #endif // NODE_H
