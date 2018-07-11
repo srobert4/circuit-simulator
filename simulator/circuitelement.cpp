@@ -4,23 +4,32 @@ CircuitElement::CircuitElement(
         int x, int y,
         int width,
         int height,
+        int id,
         QString imagePath,
         QWidget *parent
 ) : QWidget(parent)
 {
-    setAttribute(Qt::WA_NoMousePropagation);
-    setGeometry(x, y, width, height);
+//    setAttribute(Qt::WA_NoMousePropagation);
+    move(x, y);
+    this->id = id;
+
+    dialogBox = createDialogBox();
+    name = "element name";
+    value = "xx.xx";
+    units = "unit";
+
     img = new QLabel(this);
     QPixmap pm(imagePath);
     img->setPixmap(pm.scaled(width, height));
-    img->setGeometry(0, 0, width, height);
-    img->show();
+    nameLabel = new QLabel(name, this);
+    valueLabel = new QLabel(value + units, this);
 
-    nodes.append(QPoint(x - width / 2, y));
-    nodes.append(QPoint(x + width / 2, y));
+    QGridLayout *layout = new QGridLayout;
+    layout->addWidget(img, 0, 0, Qt::AlignTop | Qt::AlignLeft);
+    layout->addWidget(nameLabel, 1, 0, Qt::AlignCenter);
+    layout->addWidget(valueLabel, 2, 0, Qt::AlignCenter);
 
-    dialogBox = createDialogBox();
-
+    setLayout(layout);
     show();
 }
 
@@ -61,6 +70,36 @@ QDialog *CircuitElement::createDialogBox()
     return dialog;
 }
 
+void CircuitElement::setNodeIds(int node1, int node2)
+{
+    this->node1 = node1;
+    this->node2 = node2;
+}
+
+void CircuitElement::getNodePosition(QPoint &left, QPoint &right)
+{
+    QPoint pos = this->pos() + img->pos();
+    left = pos + QPoint(0, img->height() / 2);
+    right = left + QPoint(img->width(), 0);
+}
+
+void CircuitElement::setupDialog()
+{
+    nameLineEdit->setText(name);
+    valueLineEdit->setText(value);
+    unitsComboBox->setCurrentText(units);
+}
+
+void CircuitElement::processDialogInput()
+{
+    name = nameLineEdit->text();
+    value = valueLineEdit->text();
+    units = unitsComboBox->currentText();
+
+    nameLabel->setText(name);
+    valueLabel->setText(value + units);
+}
+
 void CircuitElement::mousePressEvent(QMouseEvent *event)
 {
     qInfo() << "Element pressed";
@@ -73,9 +112,10 @@ void CircuitElement::mouseReleaseEvent(QMouseEvent *event)
 
 void CircuitElement::mouseDoubleClickEvent(QMouseEvent *event)
 {
+    setupDialog();
+
     int ret = dialogBox->exec();
-    if (ret == QDialog::Rejected) return;
-    name = nameLineEdit->text();
-    value = valueLineEdit->text();
-    units = unitsComboBox->currentText();
+    if (ret == QDialog::Rejected) return; // TODO reset dialog
+
+    processDialogInput();
 }

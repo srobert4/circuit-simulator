@@ -1,8 +1,12 @@
 #include <QtWidgets>
 #include "wire.h"
 
-Wire::Wire(QPoint start, QPoint end, QWidget *parent) : QWidget(parent)
+Wire::Wire(QPoint start, QPoint end, int id, QWidget *parent) : QWidget(parent)
 {
+    this->id = id;
+    node1 = -1;
+    node2 = -1;
+
     int x = (start.x() < end.x() ? start.x() : end.x());
     int y = (start.y() < end.y() ? start.y() : end.y());
     int width = abs(start.x() - end.x());

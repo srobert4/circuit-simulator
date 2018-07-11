@@ -7,7 +7,9 @@ class Node : public QWidget
 {
     Q_OBJECT
 public:
-    explicit Node(int x, int y, QWidget *parent = nullptr);
+    explicit Node(int x, int y, int id, QWidget *parent = nullptr);
+    void setElemId(int elem) { elemId = elem; }
+    void addWire(int wire) { wires.append(wire); }
 
 protected:
     void paintEvent(QPaintEvent *) override;
@@ -20,9 +22,11 @@ private:
     QPoint center;
     QPoint globalCenter;
     int rad;
+    int id, elemId;
+    QVector<int> wires;
 
 signals:
-    void nodeClicked(QPoint center);
+    void nodeClicked(QPoint center, int id);
 };
 
 #endif // NODE_H

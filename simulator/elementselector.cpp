@@ -1,14 +1,8 @@
 #include "elementselector.h"
 
-ElementSelector::ElementSelector(
-        int x,
-        int y,
-        int width,
-        int height,
-        QWidget *parent
+ElementSelector::ElementSelector(QWidget *parent
 ) : QWidget(parent)
 {
-//    setGeometry(x, y, width, height);
     buttons = new QButtonGroup(this);
     connect(this, SIGNAL(clickedAway()),
                 this, SLOT(slotDeselect()));

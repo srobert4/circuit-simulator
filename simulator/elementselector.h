@@ -7,7 +7,7 @@ class ElementSelector : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ElementSelector(int x, int y, int width, int height, QWidget *parent = nullptr);
+    explicit ElementSelector(QWidget *parent = nullptr);
     void addButton(const QString &elemType,
             const QString &imgPath);
     QString getElementPath();
