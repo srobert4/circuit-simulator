@@ -13,7 +13,7 @@ class Schematic : public QWidget
 public:
     explicit Schematic(QWidget *parent = nullptr);
     void addElement(QString path);
-    bool isDrawing() {return drawing;}
+    bool isDrawing() { return drawing; }
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -21,10 +21,10 @@ protected:
     void paintEvent(QPaintEvent *) override;
 
 signals:
-    void schematicClicked();
+    void schematicClicked(); // -> (MainWindow) slotSchematicClicked()
 
 public slots:
-    void slotNodeClicked(QPoint clickPos, int nodeId);
+    void slotNodeClicked(QPoint clickPos, int nodeId); // <- (Node) nodeClicked()
 
 private:
     // Track components
@@ -34,11 +34,11 @@ private:
     int elemId, nodeId, wireId;
 
     // Needed for drawing wires
-    int x_last_click, y_last_click;
+    int lastClickX, lastClickY;
     int activeNode;
     bool drawing;
-    QPoint start_pos;
-    QPoint cur_pos;
+    QPoint startPos;
+    QPoint curPos;
 
     // Drawing functions
     void startDrawingWire(QPoint start, int nodeId);

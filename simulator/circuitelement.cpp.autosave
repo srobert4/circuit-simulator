@@ -69,7 +69,7 @@ void CircuitElement::getNodePosition(QPoint &left, QPoint &right)
     right = left + QPoint(img->width(), 0);
 }
 
-// ----------- PRIVATE FUNCTIONS -----------------------------------------------
+// ----------- PRIVATE FUNCTIONS --------------------------
 
 /* Private Function: createDialogBox()
  * -----------------------------------

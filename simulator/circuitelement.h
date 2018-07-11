@@ -7,38 +7,43 @@ class CircuitElement : public QWidget
 {
     Q_OBJECT
 public:
-    explicit CircuitElement(int x,
-            int y,
-            int width,
-            int height, int id,
-            QString imagePath,
-            QWidget *parent = nullptr);
+    explicit CircuitElement(
+        int x, int y, // top left pos
+        int width, int height, // size of image
+        int id,
+        QString imagePath,
+        QWidget *parent = nullptr
+    );
     void getNodePosition(QPoint &left, QPoint &right);
     void setNodeIds(int node1, int node2);
 
 protected:
-    void mousePressEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
-    void mouseDoubleClickEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *); // nothing
+    void mouseReleaseEvent(QMouseEvent *); // nothing
+    void mouseDoubleClickEvent(QMouseEvent *); // -> open dialogBox
 
 private:
+    // ID numbers
     int id;
-    QLabel *img;
     int node1, node2;
+
+    // Displayed labels
+    QLabel *img;
+    QLabel *nameLabel;
+    QLabel *valueLabel;
+
+    // Store parameters
     QString name;
     QString value;
     QString units;
 
-// Dialog box
+    // Dialog box
     QDialog *dialogBox;
     QLineEdit *nameLineEdit;
     QLineEdit *valueLineEdit;
     QComboBox *unitsComboBox;
 
-    QWidget *label;
-    QLabel *nameLabel;
-    QLabel *valueLabel;
-
+    // Private functions
     QDialog *createDialogBox();
     void setupDialog();
     void processDialogInput();

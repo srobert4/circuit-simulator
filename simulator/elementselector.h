@@ -8,13 +8,15 @@ class ElementSelector : public QWidget
     Q_OBJECT
 public:
     explicit ElementSelector(QWidget *parent = nullptr);
-    void addButton(const QString &elemType,
-            const QString &imgPath);
+    void addButton(
+        const QString &elemType,
+        const QString &imgPath
+    );
     QString getElementPath();
     QString getElementName();
 
 protected:
-    void mousePressEvent(QMouseEvent *event) override;
+    void mousePressEvent(QMouseEvent *) override; // -> clickedAway()
 
 private:
     QGridLayout *layout;
@@ -24,10 +26,10 @@ private:
     int curId = 1;
 
 signals:
-    void clickedAway();
+    void clickedAway(); // -> slotDeselect()
 
 public slots:
-    void slotDeselect();
+    void slotDeselect(); // <- clickedAway()
 };
 
 #endif // ELEMENTSELECTOR_H

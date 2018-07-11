@@ -1,9 +1,16 @@
 #include "schematic.h"
 
+/* Constructor: Schematic(QWidget *)
+ * ---------------------------------
+ * Allow mouse tracking so that wires
+ * can be drawn without drag. Initialize
+ * instance variables. Connect click signal
+ * to parent slot.
+ */
 Schematic::Schematic(QWidget *parent)
     : QWidget(parent)
 {
-    setMouseTracking(true);
+    setMouseTracking(true); // allow mouseMoveEvent without dragging
     drawing = false;
 
     elemId = 0;
@@ -11,17 +18,31 @@ Schematic::Schematic(QWidget *parent)
     wireId = 0;
 
     connect(this, SIGNAL(schematicClicked()),
-            parent, SLOT(slotSchematicClicked()));
+            parent, SLOT(slotSchematicClicked())); // get element to be added
 }
 
+// ----------- PUBLIC FUNCTIONS -----------------------------------------------
+
+/* Public Function: addElement(QString)
+ * ------------------------------------
+ * Adds a new element to the Schematic centered at
+ * the last point clicked with the mouse, with the
+ * image at the given path.
+ *
+ * This function also creates two nodes, one for each
+ * end of the element.
+ *
+ * The element and both nodes are given ID numbers and
+ * tracked.
+ */
 void Schematic::addElement(QString path) {
     int width = 160;
     int height = 60;
     // construct CircuitElement
     int id = elemId++;
     CircuitElement *elem = new CircuitElement(
-                x_last_click - width / 2,
-                y_last_click - height / 2,
+                lastClickX - width / 2,
+                lastClickY - height / 2,
                 width, height, id, path, this);
     elements[id] = elem;
 
@@ -53,13 +74,25 @@ void Schematic::addElement(QString path) {
             this, SLOT(slotNodeClicked(QPoint, int)));
 }
 
+// ----------- PRIVATE FUNCTIONS -----------------------------------------------
+
+/* Private Function: startDrawingWire(QPoint, int)
+ * -----------------------------------------------
+ * Sets start position and start node for a wire.
+ * Sets drawing to true.
+ */
 void Schematic::startDrawingWire(QPoint start, int nodeId)
 {
     drawing = true;
-    start_pos = start;
+    startPos = start;
     activeNode = nodeId;
 }
 
+/* Private Function: stopDrawingWire(QPoint, int)
+ * ----------------------------------------------
+ * Sets drawing to false. Clears drawn wire.
+ * Adds new Wire element corresponding to drawn wire.
+ */
 void Schematic::stopDrawingWire(QPoint end, int nodeId)
 {
     drawing = false;
@@ -67,19 +100,17 @@ void Schematic::stopDrawingWire(QPoint end, int nodeId)
     addWire(end, nodeId);
 }
 
-void Schematic::slotNodeClicked(QPoint clickPos, int nodeId)
-{
-    if (drawing) {
-        stopDrawingWire(clickPos, nodeId);
-    } else {
-        startDrawingWire(clickPos, nodeId);
-    }
-}
-
+/* Private Function: addWire(QPoint, int)
+ * --------------------------------------
+ * Create a new wire. Gets start point from
+ * startPos instance variable and end point
+ * from argument. Gets start node from instance
+ * variable activeNode and end node from argument.
+ */
 void Schematic::addWire(QPoint end, int endNode)
 {
     Wire *wire = new Wire(
-                    start_pos,
+                    startPos,
                     end,
                     wireId,
                     this
@@ -99,29 +130,62 @@ void Schematic::addWire(QPoint end, int endNode)
     wires[wireId++] = wire;
 }
 
+// ----------- SLOTS -----------------------------------------------
+
+/* Slot: slotNodeClicked(QPoint, int)
+ * ----------------------------------
+ * Called when a node is clicked. Either
+ * start or stop drawing a wire.
+ */
+void Schematic::slotNodeClicked(QPoint clickPos, int nodeId)
+{
+    if (drawing) {
+        stopDrawingWire(clickPos, nodeId);
+    } else {
+        startDrawingWire(clickPos, nodeId);
+    }
+}
+
+// ----------- EVENT HANDLERS -----------------------------------------------
+
+/* MouseEvent: mousePressEvent(QMouseEvent *)
+ * -------------------------------------------
+ * If a wire is drawing, stop drawing it.
+ * Else, save the position of the click and
+ * ask the MainWindow for an element to add.
+ */
 void Schematic::mousePressEvent(QMouseEvent *event)
 {
     if (drawing) {
         stopDrawingWire(event->pos(), -1);
         return;
     }
-    x_last_click = event->x();
-    y_last_click = event->y();
+    lastClickX = event->x();
+    lastClickY = event->y();
     emit schematicClicked();
 }
 
+/* MouseEvent: mouseMoveEvent(QMouseEvent *)
+ * ----------------------------------------
+ * If drawing, update the wire to reach the
+ * current mouse position.
+ */
 void Schematic::mouseMoveEvent(QMouseEvent *event)
 {
     if (!drawing) return;
     update();
-    cur_pos = event->pos();
+    curPos = event->pos();
 }
 
-
+/* PaintEvent: paintEvent(QPaintEvent *)
+ * -------------------------------------
+ * If drawing, draw a line from instance
+ * variable startPos to curPos.
+ */
 void Schematic::paintEvent(QPaintEvent *)
 {
     if (!drawing) return;
     QPainter painter(this);
     painter.setPen(Qt::black);
-    painter.drawLine(start_pos, cur_pos);
+    painter.drawLine(startPos, curPos);
 }
