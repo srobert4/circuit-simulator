@@ -30,7 +30,8 @@ SOURCES += \
     circuitelement.cpp \
     elementselector.cpp \
     node.cpp \
-    wire.cpp
+    wire.cpp \
+    symbol.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -38,4 +39,6 @@ HEADERS += \
     circuitelement.h \
     elementselector.h \
     node.h \
-    wire.h
+    wire.h \
+    symbol.h \
+    viewport.h

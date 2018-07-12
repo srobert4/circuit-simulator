@@ -20,6 +20,7 @@ public:
     ~MainWindow();
 
 private:
+    QGraphicsView *view;
     Schematic *schem; // CentralWidget - handles circuit schematic
     ElementSelector *selector; // left DockWidget - handles element menu
 

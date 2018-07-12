@@ -2,47 +2,54 @@
 
 /* Constructor: Node(int, int, int, QWidget *)
  * -------------------------------------------
- * Create node centered at (x,y) of radius 5 pixels
+ * Create node of radius 5 pixels
  * and associate given id number.
  * TODO: make size less hardcoded.
  */
-Node::Node(int x, int y, int id, QWidget *parent) : QWidget(parent)
+Node::Node(int id, QGraphicsItem *parent) :
+    QGraphicsItem(parent)
 {
-    setMouseTracking(true);
-    setGeometry(x - 20, y - 20, 40, 40);
-    center = QPoint(20, 20);
-    globalCenter = QPoint(x, y);
+    setAcceptHoverEvents(true);
     rad = 5;
     this->id = id;
-    show();
+//    hide();
+}
+
+// ----------- PUBLIC FUNCTIONS ----------------
+
+/* Public Function: boundingRect()
+ * -------------------------------
+ * Returns rect containing node
+ */
+QRectF Node::boundingRect() const
+{
+    return QRectF(-5, -5, 10, 10);
+}
+
+/* Public Function: paint(QPainter *, ...)
+ * ---------------------------------------
+ * Draws node.
+ */
+void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+    painter->setPen(Qt::black);
+    painter->setBrush(Qt::gray);
+    painter->drawEllipse(QPoint(0,0), rad, rad);
 }
 
 // ----------- EVENT HANDLERS ------------------
 
-/* PaintEvent: paintEvent(QPaintEvent *)
- * -------------------------------------
- * If the most recent event is an enter or
- * drag, draw the node.
- */
-void Node::paintEvent(QPaintEvent *)
-{
-    if (last_event == QEvent::Enter ||
-            last_event == QEvent::DragEnter) {
-        QPainter painter(this);
-        painter.setPen(Qt::black);
-        painter.drawEllipse(center, rad, rad);
-    }
-}
-
-/* Event: enterEvent(QEvent *)
+/* Event: hoverEnterEvent(QEvent *)
  * ---------------------------
  * Update most recent event type and
- * trigger paint event.
+ *
  */
-void Node::enterEvent(QEvent *event)
+void Node::hoverEnterEvent(QGraphicsSceneHoverEvent *)
 {
-    last_event = event->type();
-    update();
+    qInfo() << "Hovering over a node!";
+    show();
 }
 
 /* Event: leaveEvent(QEvent *)
@@ -50,10 +57,10 @@ void Node::enterEvent(QEvent *event)
  * Update most recent event type
  * and trigger paint event.
  */
-void Node::leaveEvent(QEvent *event)
+void Node::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
 {
-    last_event = event->type();
-    update();
+    qInfo() << "Leaving node";
+    hide();
 }
 
 /* MouseEvent: mousePressEvent(QMouseEvent*)
@@ -62,7 +69,8 @@ void Node::leaveEvent(QEvent *event)
  * of node relative to Schematic and node id to
  * be caught by Schematic to stop or start drawing.
  */
-void Node::mousePressEvent(QMouseEvent *)
+void Node::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    emit nodeClicked(globalCenter, id);
+    qInfo() << "clicked on node";
+    emit nodeClicked(event->pos(), id);
 }

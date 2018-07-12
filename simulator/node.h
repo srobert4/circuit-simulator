@@ -3,34 +3,36 @@
 
 #include <QtWidgets>
 
-class Node : public QWidget
+class Node : public QObject, public QGraphicsItem
 {
     Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
 public:
     explicit Node(
-        int x, int y, // center point
         int id,
-        QWidget *parent = nullptr
+        QGraphicsItem *parent = nullptr
     );
+
+    // required functions
+    QRectF boundingRect() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+
+    // getters and setters
     void setElemId(int elem) { elemId = elem; }
     void addWire(int wire) { wires.append(wire); }
 
 protected:
-    void paintEvent(QPaintEvent *) override; // -> draw node
-    void enterEvent(QEvent *event) override; // -> show node
-    void leaveEvent(QEvent *event) override; // -> clear node
-    void mousePressEvent(QMouseEvent *) override; // -> nodeClicked()
+    void hoverEnterEvent(QGraphicsSceneHoverEvent *) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent *) override; // -> nodeClicked()
 
 private:
-    QEvent::Type last_event;
-    QPoint center; // center relative to self
-    QPoint globalCenter; // center relative to Schematic
     int rad;
     int id, elemId; // track self and associated element
     QVector<int> wires; // track wires beginning or ending at this node
 
 signals:
-    void nodeClicked(QPoint center, int id); // -> (Schematic) slotNodeClicked()
+    void nodeClicked(QPointF pos, int id); // -> (Schematic) slotNodeClicked()
 };
 
 #endif // NODE_H

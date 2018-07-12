@@ -15,9 +15,11 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    QGraphicsView view = new QGraphicsView(this);
     // Create Schematic and Selector
     schem = new Schematic(this);
+    connect(schem, SIGNAL(schematicClicked()),
+            this, SLOT(slotSchematicClicked())); // get element to be added
+
     selector = new ElementSelector(this);
     selector->addButton("Resistor",
                         "/home/srobertson/Downloads/res.png");
@@ -25,14 +27,18 @@ MainWindow::MainWindow(QWidget *parent)
                         "/home/srobertson/Downloads/cap.png");
 
     // Set up layout
-    view.setScene(schem);
+    view = new QGraphicsView(this);
+    view->setScene(schem);
+    view->setMouseTracking(true);
+    schem->setSceneRect(view->rect());
     setCentralWidget(view);
     QDockWidget *dockSelector = new QDockWidget;
     dockSelector->setWidget(selector);
     dockSelector->setAllowedAreas(Qt::LeftDockWidgetArea);
     addDockWidget(
-                Qt::LeftDockWidgetArea,
-                dockSelector);
+        Qt::LeftDockWidgetArea,
+        dockSelector
+    );
 
 
 }

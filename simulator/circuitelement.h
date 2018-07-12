@@ -1,36 +1,45 @@
 #ifndef CIRCUITELEMENT_H
 #define CIRCUITELEMENT_H
 
+#include <QApplication>
 #include <QtWidgets>
 
-class CircuitElement : public QWidget
+
+#include "symbol.h"
+#include "node.h"
+
+class CircuitElement : public QObject, public QGraphicsItem
 {
     Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
 public:
     explicit CircuitElement(
-        int x, int y, // top left pos
         int width, int height, // size of image
-        int id,
+        int id, int nodeOneID, int nodeTwoID, // IDs
         QString imagePath,
-        QWidget *parent = nullptr
+        QGraphicsItem *parent = nullptr
     );
-    void getNodePosition(QPoint &left, QPoint &right);
-    void setNodeIds(int node1, int node2);
+
+    QRectF boundingRect() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+
+    Node *getNodeOne() { return nodeOne; }
+    Node *getNodeTwo() { return nodeTwo; }
+    void setNodeIds(int nodeOne, int nodeTwo);
+    void getNodeIds(int &nodeOne, int&nodeTwo);
 
 protected:
-    void mousePressEvent(QMouseEvent *); // nothing
-    void mouseReleaseEvent(QMouseEvent *); // nothing
-    void mouseDoubleClickEvent(QMouseEvent *); // -> open dialogBox
+    void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
 
 private:
     // ID numbers
-    int id;
-    int node1, node2;
+    int id, nodeOneId, nodeTwoId;
 
-    // Displayed labels
-    QLabel *img;
-    QLabel *nameLabel;
-    QLabel *valueLabel;
+    // GraphicsItems
+    QGraphicsSimpleTextItem *label;
+    Symbol *symbol;
+    Node *nodeOne;
+    Node *nodeTwo;
 
     // Store parameters
     QString name;
@@ -51,6 +60,7 @@ private:
 signals:
 
 public slots:
+    void slotSymbolDoubleClicked();
 };
 
 #endif // CIRCUITELEMENT_H

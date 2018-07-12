@@ -7,16 +7,18 @@
  * to set the label values on double click.
  */
 CircuitElement::CircuitElement(
-        int x, int y, // top left position of QWidget
         int width, int height, // width/height of image
-        int id,
+        int id, int nodeOneID, int nodeTwoID,
         QString imagePath,
-        QWidget *parent
-) : QWidget(parent)
+        QGraphicsItem *parent
+) : QGraphicsItem(parent)
 {
-    // QWidget properties
-    move(x, y);
+    setFlag(ItemHasNoContents); // optimization
+    setAcceptHoverEvents(true);
+    // Element properties
     this->id = id;
+    this->nodeOneId = nodeOneID;
+    this->nodeTwoId = nodeTwoID;
 
     // create Dialog box
     dialogBox = createDialogBox();
@@ -26,50 +28,69 @@ CircuitElement::CircuitElement(
     value = "xx.xx";
     units = "unit";
 
-    // Create image and label
-    img = new QLabel(this);
-    QPixmap pm(imagePath);
-    img->setPixmap(pm.scaled(width, height));
-    nameLabel = new QLabel(name, this);
-    valueLabel = new QLabel(value + units, this);
+    // Add children - symbol, nodes, label
+    symbol = new Symbol(width, height, imagePath, this);
+    connect(symbol, SIGNAL(doubleClicked()),
+            this, SLOT (slotSymbolDoubleClicked()));
 
-    // set layout
-    QGridLayout *layout = new QGridLayout;
-    layout->addWidget(img, 0, 0, Qt::AlignTop | Qt::AlignLeft);
-    layout->addWidget(nameLabel, 1, 0, Qt::AlignCenter);
-    layout->addWidget(valueLabel, 2, 0, Qt::AlignCenter);
+    nodeOne = new Node(nodeOneId, symbol);
+    nodeTwo = new Node(nodeTwoId, symbol);
 
-    setLayout(layout);
-    show();
+    label = new QGraphicsSimpleTextItem(name + "\n" + value + units, symbol);
+
+    // Set children positions using child->setPos(pos relative to symbol)
+    nodeOne->setPos(-width / 2, 0);
+    nodeTwo->setPos(width / 2, 0);
+    label->setPos(0, height / 2);
 }
 
 // ----------- PUBLIC FUNCTIONS -----------------------------------------------
+
+/* Public Function: boundingRect()
+ * -------------------------------
+ * Required for QGraphicsItem. Returns
+ * null QRectF since contains no items.
+ */
+QRectF CircuitElement::boundingRect() const
+{
+    return QRectF();
+}
+
+/* Public Function: paint(...)
+ * ---------------------------
+ * Required for QGraphicsItem.
+ * No-op.
+ */
+void CircuitElement::paint(QPainter *painter,
+                           const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(painter);
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+}
 
 /* Public Function: setNodeIds(int, int)
  * -------------------------------------
  * Associates the element nodes with the
  * IDs tracked by the Schematic.
  */
-void CircuitElement::setNodeIds(int node1, int node2)
+void CircuitElement::setNodeIds(int nodeOne, int nodeTwo)
 {
-    this->node1 = node1;
-    this->node2 = node2;
+    this->nodeOneId = nodeOne;
+    this->nodeTwoId = nodeTwo;
 }
 
-/* Public Function: getNodePosition(QPoint&, QPoint&)
- * --------------------------------------------------
- * Sets the value of the arguments to the position of
- * the left and right nodes of the element (ends of the
- * image)
+/* Public Function: getNodeIds(int&, int&)
+ * -------------------------------------
+ * Sets arguments to node IDS for two nodes
  */
-void CircuitElement::getNodePosition(QPoint &left, QPoint &right)
+void CircuitElement::getNodeIds(int &nodeOne, int &nodeTwo)
 {
-    QPoint pos = this->pos() + img->pos();
-    left = pos + QPoint(0, img->height() / 2);
-    right = left + QPoint(img->width(), 0);
+    nodeOne = this->nodeOneId;
+    nodeTwo = this->nodeTwoId;
 }
 
-// ----------- PRIVATE FUNCTIONS -----------------------------------------------
+// ----------- PRIVATE FUNCTIONS --------------------------
 
 /* Private Function: createDialogBox()
  * -----------------------------------
@@ -106,9 +127,9 @@ QDialog *CircuitElement::createDialogBox()
     layout->addWidget(doneButton, 3, 2);
     dialog->setLayout(layout);
 
-    connect(cancelButton, SIGNAL(clicked(bool)),
+    QApplication::connect(cancelButton, SIGNAL(clicked(bool)),
             dialog, SLOT(reject()));
-    connect(doneButton, SIGNAL(clicked(bool)),
+    QApplication::connect(doneButton, SIGNAL(clicked(bool)),
             dialog, SLOT(accept()));
 
     return dialog;
@@ -140,29 +161,12 @@ void CircuitElement::processDialogInput()
     value = valueLineEdit->text();
     units = unitsComboBox->currentText();
 
-    nameLabel->setText(name);
-    valueLabel->setText(value + units);
+    label->setText(name + "\n" + value + units);
 }
 
-// ----------- EVENT HANDLERS -------------------------------------
+// ----------- SLOTS -------------------------------------
 
-/* mousePress: for debugging */
-void CircuitElement::mousePressEvent(QMouseEvent *)
-{
-    qInfo() << "Element pressed";
-}
-
-/* mouseRelease: for debugging */
-void CircuitElement::mouseReleaseEvent(QMouseEvent *)
-{
-    qInfo() << "Element released";
-}
-
-/* MouseEvent: mouseDoubleClickEvent(QMouseEvent*)
- * -----------------------------------------------
- * Opens dialog box for user to input element params
- */
-void CircuitElement::mouseDoubleClickEvent(QMouseEvent *)
+void CircuitElement::slotSymbolDoubleClicked()
 {
     setupDialog();
 
@@ -170,4 +174,12 @@ void CircuitElement::mouseDoubleClickEvent(QMouseEvent *)
     if (ret == QDialog::Rejected) return; // TODO reset dialog
 
     processDialogInput();
+}
+
+// ----------- EVENT HANDLERS -------------------------
+
+void CircuitElement::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+{
+    qInfo() << "Hovering over circuit element";
+    QGraphicsItem::hoverEnterEvent(event);
 }

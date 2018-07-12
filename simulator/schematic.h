@@ -4,27 +4,27 @@
 #include <QtWidgets>
 
 #include "circuitelement.h"
+#include "symbol.h"
 #include "node.h"
 #include "wire.h"
 
-class Schematic : public QWidget
+class Schematic : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    explicit Schematic(QWidget *parent = nullptr);
+    explicit Schematic(QObject *parent = nullptr);
     void addElement(QString path);
     bool isDrawing() { return drawing; }
 
 protected:
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
-    void paintEvent(QPaintEvent *) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
 
 signals:
     void schematicClicked(); // -> (MainWindow) slotSchematicClicked()
 
 public slots:
-    void slotNodeClicked(QPoint clickPos, int nodeId); // <- (Node) nodeClicked()
+    void slotNodeClicked(QPointF end, int nodeId); // <- (Node) nodeClicked()
 
 private:
     // Track components
@@ -34,16 +34,17 @@ private:
     int elemId, nodeId, wireId;
 
     // Needed for drawing wires
+    QGraphicsLineItem *curWire;
     int lastClickX, lastClickY;
     int activeNode;
     bool drawing;
-    QPoint startPos;
-    QPoint curPos;
+    QPointF startPos;
+    QPointF curPos;
 
     // Drawing functions
-    void startDrawingWire(QPoint start, int nodeId);
-    void stopDrawingWire(QPoint end, int nodeId);
-    void addWire(QPoint end, int endNode);
+    void startDrawingWire(QPointF start, int nodeId);
+    void stopDrawingWire(QPointF end, int nodeId);
+    void addWire(QPointF end, int endNode = -1);
 };
 
 #endif // SCHEMATIC_H
