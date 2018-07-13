@@ -6,14 +6,16 @@
  * image at the given imagePath and a default label. Creates a dialogBox
  * to set the label values on double click.
  */
-CircuitElement::CircuitElement(
-        int width, int height, // width/height of image
+CircuitElement::CircuitElement(int width, int height, // width/height of image
         int id, int nodeOneID, int nodeTwoID,
-        QString imagePath,
+        QString imagePath, const int TypeKey, const int IDKey,
         QGraphicsItem *parent
 ) : QGraphicsItem(parent)
 {
-    setFlag(ItemHasNoContents); // optimization
+    setFlag(ItemIsSelectable, true);
+    setFlag(ItemIsFocusable, true);
+    setFlag(ItemIsMovable, true);
+    setFlag(ItemHasNoContents, true); // optimization
     setAcceptHoverEvents(true);
     // Element properties
     this->id = id;
@@ -33,8 +35,8 @@ CircuitElement::CircuitElement(
     connect(symbol, SIGNAL(doubleClicked()),
             this, SLOT (slotSymbolDoubleClicked()));
 
-    nodeOne = new Node(nodeOneId, symbol);
-    nodeTwo = new Node(nodeTwoId, symbol);
+    nodeOne = new Node(nodeOneId, id, symbol);
+    nodeTwo = new Node(nodeTwoId, id, symbol);
 
     label = new QGraphicsSimpleTextItem(name + "\n" + value + units, symbol);
 
@@ -42,6 +44,16 @@ CircuitElement::CircuitElement(
     nodeOne->setPos(-width / 2, 0);
     nodeTwo->setPos(width / 2, 0);
     label->setPos(0, height / 2);
+
+    // Set data to identify what has been clicked
+    symbol->setData(TypeKey, "symbol");
+    nodeOne->setData(TypeKey, "node");
+    nodeTwo->setData(TypeKey, "node");
+    label->setData(TypeKey, "label");
+
+    symbol->setData(IDKey, id);
+    nodeOne->setData(IDKey, nodeOneId);
+    nodeTwo->setData(IDKey, nodeTwoId);
 }
 
 // ----------- PUBLIC FUNCTIONS -----------------------------------------------
@@ -178,8 +190,23 @@ void CircuitElement::slotSymbolDoubleClicked()
 
 // ----------- EVENT HANDLERS -------------------------
 
+void CircuitElement::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    qInfo() << "Mouse press received by CircuitElement";
+    QGraphicsItem::mousePressEvent(event);
+}
+
 void CircuitElement::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
-    qInfo() << "Hovering over circuit element";
+    nodeOne->showNode();
+    nodeTwo->showNode();
     QGraphicsItem::hoverEnterEvent(event);
 }
+
+void CircuitElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    nodeOne->hideNode();
+    nodeTwo->hideNode();
+    QGraphicsItem::hoverLeaveEvent(event);
+}
+

@@ -23,9 +23,6 @@ private:
     QGraphicsView *view;
     Schematic *schem; // CentralWidget - handles circuit schematic
     ElementSelector *selector; // left DockWidget - handles element menu
-
-private slots:
-    void slotSchematicClicked(); // get selected element from Selector and send to Schematic
 };
 
 #endif // MAINWINDOW_H

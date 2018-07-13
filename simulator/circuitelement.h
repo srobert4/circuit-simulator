@@ -17,6 +17,7 @@ public:
         int width, int height, // size of image
         int id, int nodeOneID, int nodeTwoID, // IDs
         QString imagePath,
+        const int TypeKey, const int IDKey,
         QGraphicsItem *parent = nullptr
     );
 
@@ -29,7 +30,9 @@ public:
     void getNodeIds(int &nodeOne, int&nodeTwo);
 
 protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent *event);
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
 
 private:
     // ID numbers

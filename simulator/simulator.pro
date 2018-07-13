@@ -30,7 +30,6 @@ SOURCES += \
     circuitelement.cpp \
     elementselector.cpp \
     node.cpp \
-    wire.cpp \
     symbol.cpp
 
 HEADERS += \

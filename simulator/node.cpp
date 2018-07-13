@@ -6,13 +6,16 @@
  * and associate given id number.
  * TODO: make size less hardcoded.
  */
-Node::Node(int id, QGraphicsItem *parent) :
+Node::Node(int id, int elemId, QGraphicsItem *parent) :
     QGraphicsItem(parent)
 {
     setAcceptHoverEvents(true);
     rad = 5;
     this->id = id;
-//    hide();
+    this->elemId = elemId;
+    line = QColor(Qt::black);
+    fill = QColor(Qt::gray);
+    hideNode();
 }
 
 // ----------- PUBLIC FUNCTIONS ----------------
@@ -34,43 +37,54 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
-    painter->setPen(Qt::black);
-    painter->setBrush(Qt::gray);
+    painter->setPen(line);
+    painter->setBrush(fill);
     painter->drawEllipse(QPoint(0,0), rad, rad);
+}
+
+/* Public Function: hideNode()
+ * ----------------------------
+ * Set node invisible
+ */
+void Node::hideNode()
+{
+    line.setAlpha(0);
+    fill.setAlpha(0);
+    update();
+}
+
+/* Public Function: hideNode()
+ * ----------------------------
+ * Set node visible
+ */
+void Node::showNode()
+{
+    line.setAlpha(255);
+    fill.setAlpha(255);
+    update();
 }
 
 // ----------- EVENT HANDLERS ------------------
 
 /* Event: hoverEnterEvent(QEvent *)
  * ---------------------------
- * Update most recent event type and
+ * Show node on hover
  *
  */
-void Node::hoverEnterEvent(QGraphicsSceneHoverEvent *)
+void Node::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
-    qInfo() << "Hovering over a node!";
-    show();
+    if (elemId == -1)
+        showNode();
+    QGraphicsItem::hoverEnterEvent(event);
 }
 
 /* Event: leaveEvent(QEvent *)
  * ---------------------------
- * Update most recent event type
- * and trigger paint event.
+ * Hide node after hover
  */
-void Node::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
+void Node::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
-    qInfo() << "Leaving node";
-    hide();
-}
-
-/* MouseEvent: mousePressEvent(QMouseEvent*)
- * -----------------------------------------
- * Emit nodeClicked() signal with center point
- * of node relative to Schematic and node id to
- * be caught by Schematic to stop or start drawing.
- */
-void Node::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-    qInfo() << "clicked on node";
-    emit nodeClicked(event->pos(), id);
+    if (elemId == -1)
+        hideNode();
+    QGraphicsItem::hoverLeaveEvent(event);
 }

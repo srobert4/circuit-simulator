@@ -17,21 +17,22 @@ MainWindow::MainWindow(QWidget *parent)
 {
     // Create Schematic and Selector
     schem = new Schematic(this);
-    connect(schem, SIGNAL(schematicClicked()),
-            this, SLOT(slotSchematicClicked())); // get element to be added
 
-    selector = new ElementSelector(this);
+    selector = new ElementSelector(schem, this);
     selector->addButton("Resistor",
-                        "/home/srobertson/Downloads/res.png");
+                        "/home/srobertson/Downloads/resistor.png",
+                        "/home/srobertson/Downloads/resistorShadow.png");
     selector->addButton("Capacitor",
+                        "/home/srobertson/Downloads/cap.png",
                         "/home/srobertson/Downloads/cap.png");
 
-    // Set up layout
-    view = new QGraphicsView(this);
-    view->setScene(schem);
+    // Set up schematic graphics view
+    view = new QGraphicsView(schem, this);
     view->setMouseTracking(true);
-    schem->setSceneRect(view->rect());
+    schem->setSceneRect(0, 0, 800, 800); // set initial size
     setCentralWidget(view);
+
+    // Set up selector dock
     QDockWidget *dockSelector = new QDockWidget;
     dockSelector->setWidget(selector);
     dockSelector->setAllowedAreas(Qt::LeftDockWidgetArea);
@@ -39,26 +40,9 @@ MainWindow::MainWindow(QWidget *parent)
         Qt::LeftDockWidgetArea,
         dockSelector
     );
-
-
 }
 
 MainWindow::~MainWindow()
 {
 
-}
-
-/*
- * Slot: slotSchematicClicked()
- * ----------------------------
- * This slot is called when the mouse is
- * clicked on the Schematic. The MainWindow asks
- * the Selector if there is an element selected, and
- * if there is adds this element to the Schematic.
- */
-void MainWindow::slotSchematicClicked()
-{
-    QString path = selector->getElementPath();
-    if (path == "") return;
-    schem->addElement(path);
 }

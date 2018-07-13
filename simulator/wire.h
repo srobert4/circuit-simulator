@@ -1,28 +1,27 @@
 #ifndef WIRE_H
 #define WIRE_H
 
-#include <QObject>
-#include <QWidget>
+#include <QtWidgets>
+#include "node.h"
 
-class Wire : public QWidget
+class Wire
 {
-    Q_OBJECT
 public:
-    explicit Wire(QPoint start, QPoint end, int id, QWidget *parent = nullptr);
-    void setStartNode(int node) { node1 = node; }
-    void setEndNode(int node) { node2 = node; }
-
-protected:
-    void paintEvent(QPaintEvent *) override;
+    Wire(QGraphicsLineItem *line,
+        Node *startNode, Node *endNode, int id)
+    {
+        this->line = line;
+        line->setZValue(-1);
+        this->id = id;
+        this->startNode = startNode;
+        this->endNode = endNode;
+    }
 
 private:
-    QPoint start;
-    QPoint end;
-    int id, node1, node2;
-
-signals:
-
-public slots:
+    QGraphicsLineItem *line;
+    int id;
+    Node *startNode;
+    Node *endNode;
 };
 
 #endif // WIRE_H

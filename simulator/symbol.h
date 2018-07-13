@@ -19,11 +19,12 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 
 protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent *event);
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *) { emit doubleClicked(); }
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
 
 private:
-    QPixmap pixmap;
+    QPixmap display;
+    QPixmap normal, selected, drag;
     int width, height;
 
 signals:

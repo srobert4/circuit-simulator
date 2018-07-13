@@ -7,12 +7,19 @@
  * emitted when the Selector is clicked outside a button
  * to the slot to deselect all buttons.
  */
-ElementSelector::ElementSelector(QWidget *parent
+ElementSelector::ElementSelector(Schematic *schematic, QWidget *parent
 ) : QWidget(parent)
 {
+    this->schematic = schematic;
+    connect(schematic, SIGNAL(schematicClicked()),
+            this, SLOT(slotSchematicClicked()));
+
     buttons = new QButtonGroup(this);
-    connect(this, SIGNAL(clickedAway()),
-                this, SLOT(slotDeselect()));
+    connect(buttons, SIGNAL(buttonPressed(int)),
+            this, SLOT(slotButtonPressed(int)));
+    connect(buttons, SIGNAL(buttonReleased(int)),
+            this, SLOT(slotButtonReleased(int)));
+    deselectOnRelease = false;
 
     layout = new QGridLayout;
     setLayout(layout);
@@ -30,7 +37,8 @@ ElementSelector::ElementSelector(QWidget *parent
  */
 void ElementSelector::addButton(
     const QString &elemType,
-    const QString &imgPath
+    const QString &imgPath,
+    const QString &imgShadowPath
 )
 {
     // create button
@@ -43,6 +51,7 @@ void ElementSelector::addButton(
 
     // associate with path and element
     imagePaths[curId] = imgPath;
+    shadowImagePaths[curId] = imgShadowPath;
     elementTypes[curId] = elemType;    
     curId++;
 }
@@ -72,14 +81,13 @@ QString ElementSelector::getElementPath()
         return "";
     return imagePaths[checked];
 }
+// ----------- PRIVATE FUNCTIONS ------------------------------
 
-// ----------- SLOTS -----------------------------------------------
-
-/* Slot: slotDeselect()
+/* Slot: deselectAll()
  * --------------------
  * Deselects all buttons
  */
-void ElementSelector::slotDeselect()
+void ElementSelector::deselectAll()
 {
     buttons->setExclusive(false);
     QAbstractButton *checked = buttons->checkedButton();
@@ -88,15 +96,33 @@ void ElementSelector::slotDeselect()
     buttons->setExclusive(true);
 }
 
-// ----------- EVENT HANDLERS -----------------------------------------------
+// ----------- SLOTS -----------------------------------------------
 
-/* MouseEvent: mousePressEvent(QMouseEvent *)
- * ------------------------------------------
- * When the Selector is clicked it emits the
- * clickedAway() signal, which tells the Selector
- * to deselect all buttons.
+/* Slot: slotButtonPressed(int)
+ * ----------------------------
+ * Check if button pressed is already selected,
+ * in which case set deselectOnRelease so that
+ * it is deselected when mouse is released.
  */
-void ElementSelector::mousePressEvent(QMouseEvent *)
+void ElementSelector::slotButtonPressed(int id)
 {
-    emit clickedAway();
+    if (id == buttons->checkedId())
+        deselectOnRelease = true;
+}
+
+
+/* Slot: slotButtonReleased(int)
+ * -------------------------
+ * Deselect all if checked button
+ * is clicked.
+ */
+void ElementSelector::slotButtonReleased(int id)
+{
+    if (deselectOnRelease) {
+        deselectAll();
+        deselectOnRelease = false;
+        return;
+    }
+    schematic->setMode(Schematic::Build);
+    schematic->setImagePaths(imagePaths[id], shadowImagePaths[id]);
 }

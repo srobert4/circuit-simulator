@@ -13,38 +13,50 @@ class Schematic : public QGraphicsScene
     Q_OBJECT
 public:
     explicit Schematic(QObject *parent = nullptr);
-    void addElement(QString path);
-    bool isDrawing() { return drawing; }
+    enum Mode { Edit, Build, Draw };
+    Q_ENUM(Mode)
+
+    void setMode(Mode mode) { this->mode = mode; }
+    void setImagePaths(QString &imgPath, QString &dragPath);
 
 protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
 
 signals:
     void schematicClicked(); // -> (MainWindow) slotSchematicClicked()
 
-public slots:
-    void slotNodeClicked(QPointF end, int nodeId); // <- (Node) nodeClicked()
-
 private:
+    Mode mode;
+
     // Track components
     QMap<int, CircuitElement*> elements;
-    QMap<int, Node*> nodes;
     QMap<int, Wire*> wires;
     int elemId, nodeId, wireId;
 
-    // Needed for drawing wires
-    QGraphicsLineItem *curWire;
+    const int TypeKey = 0;
+    const int IDKey = 1;
+
+    // Displaying elements
+    void addElement(QString path);
+    QGraphicsPixmapItem *curShadow;
     int lastClickX, lastClickY;
-    int activeNode;
-    bool drawing;
-    QPointF startPos;
+    QString imagePath;
+    QPixmap shadowImage;
+
+    // Track mouse
     QPointF curPos;
 
+    // Drawing wires
+    QGraphicsLineItem *curWire;
+    Node *activeNode;
+    QPointF startPos;
+
+
     // Drawing functions
-    void startDrawingWire(QPointF start, int nodeId);
-    void stopDrawingWire(QPointF end, int nodeId);
-    void addWire(QPointF end, int endNode = -1);
+    void startDrawingWire();
+    void stopDrawingWire(Node *endNode);
+    void addWire(Node *endNode);
 };
 
 #endif // SCHEMATIC_H

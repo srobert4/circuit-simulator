@@ -2,34 +2,40 @@
 #define ELEMENTSELECTOR_H
 
 #include <QtWidgets>
+#include "schematic.h"
 
 class ElementSelector : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ElementSelector(QWidget *parent = nullptr);
+    explicit ElementSelector(Schematic *schematic, QWidget *parent = nullptr);
     void addButton(
         const QString &elemType,
-        const QString &imgPath
+        const QString &imgPath,
+        const QString &imgShadowPath
     );
     QString getElementPath();
     QString getElementName();
 
 protected:
-    void mousePressEvent(QMouseEvent *) override; // -> clickedAway()
+    void mousePressEvent(QMouseEvent *) { deselectAll(); }
 
 private:
     QGridLayout *layout;
     QButtonGroup *buttons;
+    Schematic *schematic;
     QMap<int, QString> imagePaths;
+    QMap<int, QString> shadowImagePaths;
     QMap<int, QString> elementTypes;
     int curId = 1;
+    bool deselectOnRelease;
 
-signals:
-    void clickedAway(); // -> slotDeselect()
+    void deselectAll();
 
 public slots:
-    void slotDeselect(); // <- clickedAway()
+    void slotButtonPressed(int id);
+    void slotButtonReleased(int id);
+    void slotSchematicClicked() { deselectAll(); }
 };
 
 #endif // ELEMENTSELECTOR_H
