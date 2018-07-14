@@ -17,11 +17,14 @@ public:
     Q_ENUM(Mode)
 
     void setMode(Mode mode) { this->mode = mode; }
-    void setImagePaths(QString &imgPath, QString &dragPath);
+    void setImagePaths(QString &imgPath, QString &selectedPath, QString &dragPath);
 
 protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
+    void dragMoveEvent(QGraphicsSceneDragDropEvent *event);
+    void drawBackground(QPainter *painter, const QRectF &rect);
+    void keyReleaseEvent(QKeyEvent *event);
 
 signals:
     void schematicClicked(); // -> (MainWindow) slotSchematicClicked()
@@ -34,14 +37,13 @@ private:
     QMap<int, Wire*> wires;
     int elemId, nodeId, wireId;
 
-    const int TypeKey = 0;
-    const int IDKey = 1;
-
     // Displaying elements
-    void addElement(QString path);
+    const int elementWidth = 160;
+    void addElement();
     QGraphicsPixmapItem *curShadow;
     int lastClickX, lastClickY;
-    QString imagePath;
+    QPixmap image;
+    QPixmap selectedImage;
     QPixmap shadowImage;
 
     // Track mouse
@@ -52,11 +54,15 @@ private:
     Node *activeNode;
     QPointF startPos;
 
+    const int gridSize = 20;
+
 
     // Drawing functions
     void startDrawingWire();
     void stopDrawingWire(Node *endNode);
     void addWire(Node *endNode);
+    QPointF gridPos(QPointF point);
+    QPointF gridPos(qreal x, qreal y);
 };
 
 #endif // SCHEMATIC_H

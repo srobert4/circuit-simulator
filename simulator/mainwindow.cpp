@@ -21,14 +21,17 @@ MainWindow::MainWindow(QWidget *parent)
     selector = new ElementSelector(schem, this);
     selector->addButton("Resistor",
                         "/home/srobertson/Downloads/resistor.png",
+                        "/home/srobertson/Downloads/resistorSelected.png",
                         "/home/srobertson/Downloads/resistorShadow.png");
     selector->addButton("Capacitor",
-                        "/home/srobertson/Downloads/cap.png",
-                        "/home/srobertson/Downloads/cap.png");
+                        "/home/srobertson/Downloads/capacitor.png",
+                        "/home/srobertson/Downloads/capacitorSelected.png",
+                        "/home/srobertson/Downloads/capacitorShadow.png");
 
     // Set up schematic graphics view
     view = new QGraphicsView(schem, this);
     view->setMouseTracking(true);
+    view->setDragMode(QGraphicsView::RubberBandDrag);
     schem->setSceneRect(0, 0, 800, 800); // set initial size
     setCentralWidget(view);
 

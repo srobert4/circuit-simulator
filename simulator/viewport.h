@@ -7,8 +7,8 @@ class Viewport : public QGraphicsView
 {
     Q_OBJECT
 public:
-    explicit Viewport(QWidget *parent = 0) : QGraphicsView(parent) {}
-
+    explicit Viewport(QWidget *parent = 0) : QGraphicsView(parent) { setDragMode(QGraphicsView::RubberBandDrag); }
+\
 protected:
     void resizeEvent(QResizeEvent *event) override {
         this->scene()->setSceneRect(rect());

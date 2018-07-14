@@ -7,11 +7,10 @@
  * TODO: make size less hardcoded.
  */
 Node::Node(int id, int elemId, QGraphicsItem *parent) :
-    QGraphicsItem(parent)
+    SchematicItem(id, "node", parent)
 {
     setAcceptHoverEvents(true);
     rad = 5;
-    this->id = id;
     this->elemId = elemId;
     line = QColor(Qt::black);
     fill = QColor(Qt::gray);
@@ -26,7 +25,7 @@ Node::Node(int id, int elemId, QGraphicsItem *parent) :
  */
 QRectF Node::boundingRect() const
 {
-    return QRectF(-5, -5, 10, 10);
+    return QRectF(-rad, -rad, rad*2, rad*2);
 }
 
 /* Public Function: paint(QPainter *, ...)
@@ -40,6 +39,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setPen(line);
     painter->setBrush(fill);
     painter->drawEllipse(QPoint(0,0), rad, rad);
+    setZValue(1);
 }
 
 /* Public Function: hideNode()

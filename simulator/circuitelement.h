@@ -4,20 +4,17 @@
 #include <QApplication>
 #include <QtWidgets>
 
-
 #include "symbol.h"
 #include "node.h"
 
-class CircuitElement : public QObject, public QGraphicsItem
+class CircuitElement : public SchematicItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
 public:
     explicit CircuitElement(
-        int width, int height, // size of image
         int id, int nodeOneID, int nodeTwoID, // IDs
-        QString imagePath,
-        const int TypeKey, const int IDKey,
+        const QPixmap image, const QPixmap selectedImage,
         QGraphicsItem *parent = nullptr
     );
 
@@ -30,17 +27,20 @@ public:
     void getNodeIds(int &nodeOne, int&nodeTwo);
 
 protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
+    void focusInEvent(QFocusEvent *event);
+    void focusOutEvent(QFocusEvent *event);
 
 private:
     // ID numbers
-    int id, nodeOneId, nodeTwoId;
+    int nodeOneId, nodeTwoId;
 
     // GraphicsItems
+    int width, height;
+    QPixmap display, normal, selected;
     QGraphicsSimpleTextItem *label;
-    Symbol *symbol;
     Node *nodeOne;
     Node *nodeTwo;
 
@@ -59,11 +59,6 @@ private:
     QDialog *createDialogBox();
     void setupDialog();
     void processDialogInput();
-
-signals:
-
-public slots:
-    void slotSymbolDoubleClicked();
 };
 
 #endif // CIRCUITELEMENT_H

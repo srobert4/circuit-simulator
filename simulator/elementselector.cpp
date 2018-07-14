@@ -36,10 +36,11 @@ ElementSelector::ElementSelector(Schematic *schematic, QWidget *parent
  * and element types.
  */
 void ElementSelector::addButton(
-    const QString &elemType,
-    const QString &imgPath,
-    const QString &imgShadowPath
-)
+        const QString &elemType,
+        const QString &imgPath,
+        const QString &imgSelectedPath,
+        const QString &imgShadowPath
+        )
 {
     // create button
     QPushButton *button = new QPushButton(elemType, this);
@@ -51,6 +52,7 @@ void ElementSelector::addButton(
 
     // associate with path and element
     imagePaths[curId] = imgPath;
+    imageSelectedPaths[curId] = imgSelectedPath;
     shadowImagePaths[curId] = imgShadowPath;
     elementTypes[curId] = elemType;    
     curId++;
@@ -124,5 +126,7 @@ void ElementSelector::slotButtonReleased(int id)
         return;
     }
     schematic->setMode(Schematic::Build);
-    schematic->setImagePaths(imagePaths[id], shadowImagePaths[id]);
+    schematic->setImagePaths(imagePaths[id],
+                             imageSelectedPaths[id],
+                             shadowImagePaths[id]);
 }

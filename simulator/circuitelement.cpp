@@ -6,21 +6,26 @@
  * image at the given imagePath and a default label. Creates a dialogBox
  * to set the label values on double click.
  */
-CircuitElement::CircuitElement(int width, int height, // width/height of image
+CircuitElement::CircuitElement(// width/height of image
         int id, int nodeOneID, int nodeTwoID,
-        QString imagePath, const int TypeKey, const int IDKey,
+        const QPixmap image,
+        const QPixmap selectedImage,
         QGraphicsItem *parent
-) : QGraphicsItem(parent)
+) : SchematicItem(id, "element", parent) // later change type to arg and name by element type e.g. resistor
 {
     setFlag(ItemIsSelectable, true);
     setFlag(ItemIsFocusable, true);
     setFlag(ItemIsMovable, true);
-    setFlag(ItemHasNoContents, true); // optimization
     setAcceptHoverEvents(true);
-    // Element properties
-    this->id = id;
-    this->nodeOneId = nodeOneID;
-    this->nodeTwoId = nodeTwoID;
+
+    // Create symbol
+    normal = image;
+    this->width = normal.width();
+    this->height = normal.height();
+
+    selected = selectedImage;
+    display = selected; // icon is selected when placed
+    setSelected(true);
 
     // create Dialog box
     dialogBox = createDialogBox();
@@ -30,30 +35,21 @@ CircuitElement::CircuitElement(int width, int height, // width/height of image
     value = "xx.xx";
     units = "unit";
 
-    // Add children - symbol, nodes, label
-    symbol = new Symbol(width, height, imagePath, this);
-    connect(symbol, SIGNAL(doubleClicked()),
-            this, SLOT (slotSymbolDoubleClicked()));
+    // Add Nodes
+    this->nodeOneId = nodeOneID;
+    this->nodeTwoId = nodeTwoID;
+    nodeOne = new Node(nodeOneId, id, this);
+    nodeTwo = new Node(nodeTwoId, id, this);
 
-    nodeOne = new Node(nodeOneId, id, symbol);
-    nodeTwo = new Node(nodeTwoId, id, symbol);
-
-    label = new QGraphicsSimpleTextItem(name + "\n" + value + units, symbol);
+    // Label doesn't inherit SchematicItem so set data ourselves
+    label = new QGraphicsSimpleTextItem(name + "\n" + value + units, this);
+    label->setData(TypeKey, "label");
+    label->setData(IDKey, id);
 
     // Set children positions using child->setPos(pos relative to symbol)
-    nodeOne->setPos(-width / 2, 0);
-    nodeTwo->setPos(width / 2, 0);
-    label->setPos(0, height / 2);
-
-    // Set data to identify what has been clicked
-    symbol->setData(TypeKey, "symbol");
-    nodeOne->setData(TypeKey, "node");
-    nodeTwo->setData(TypeKey, "node");
-    label->setData(TypeKey, "label");
-
-    symbol->setData(IDKey, id);
-    nodeOne->setData(IDKey, nodeOneId);
-    nodeTwo->setData(IDKey, nodeTwoId);
+    nodeOne->setPos(-image.width() / 2, 0);
+    nodeTwo->setPos(image.width() / 2, 0);
+    label->setPos(-label->boundingRect().width() / 2, image.height() / 2);
 }
 
 // ----------- PUBLIC FUNCTIONS -----------------------------------------------
@@ -65,20 +61,20 @@ CircuitElement::CircuitElement(int width, int height, // width/height of image
  */
 QRectF CircuitElement::boundingRect() const
 {
-    return QRectF();
+    return QRectF(-width / 2, -height / 2, width, height); // TODO - include text
 }
 
 /* Public Function: paint(...)
  * ---------------------------
- * Required for QGraphicsItem.
- * No-op.
+ * Render symbol pixmap
  */
 void CircuitElement::paint(QPainter *painter,
                            const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    Q_UNUSED(painter);
     Q_UNUSED(option);
     Q_UNUSED(widget);
+    display = (isSelected() ? selected : normal);
+    painter->drawPixmap(-width/2, -height/2, display);
 }
 
 /* Public Function: setNodeIds(int, int)
@@ -174,11 +170,13 @@ void CircuitElement::processDialogInput()
     units = unitsComboBox->currentText();
 
     label->setText(name + "\n" + value + units);
+    label->setPos(-label->boundingRect().width() / 2, this->boundingRect().height() / 2);
 }
 
-// ----------- SLOTS -------------------------------------
 
-void CircuitElement::slotSymbolDoubleClicked()
+// ----------- EVENT HANDLERS -------------------------
+
+void CircuitElement::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
     setupDialog();
 
@@ -186,14 +184,8 @@ void CircuitElement::slotSymbolDoubleClicked()
     if (ret == QDialog::Rejected) return; // TODO reset dialog
 
     processDialogInput();
-}
 
-// ----------- EVENT HANDLERS -------------------------
-
-void CircuitElement::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-    qInfo() << "Mouse press received by CircuitElement";
-    QGraphicsItem::mousePressEvent(event);
+    QGraphicsItem::mouseDoubleClickEvent(event);
 }
 
 void CircuitElement::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
@@ -210,3 +202,16 @@ void CircuitElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
     QGraphicsItem::hoverLeaveEvent(event);
 }
 
+void CircuitElement::focusInEvent(QFocusEvent *event)
+{
+    display = selected;
+    update();
+    QGraphicsItem::focusInEvent(event);
+}
+
+void CircuitElement::focusOutEvent(QFocusEvent *event)
+{
+    display = normal;
+    update();
+    QGraphicsItem::focusOutEvent(event);
+}

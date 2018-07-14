@@ -1,14 +1,18 @@
 #include "symbol.h"
 
-Symbol::Symbol(int width, int height, QString &imagePath, QGraphicsItem *parent)
-    : QGraphicsItem(parent)
+Symbol::Symbol(const QPixmap &image, const QPixmap &selectedImage, int id, QGraphicsItem *parent)
+    : SchematicItem(id, "symbol", parent)
 {
     setAcceptHoverEvents(true);
-    display = QPixmap(imagePath);
-    display = display.scaled(width, height, Qt::KeepAspectRatio);
-    this->width = display.width();
-    this->height = display.height();
+    setFlag(ItemIsFocusable);
+    setFlag(ItemIsMovable);
+    normal = image;
+    this->width = normal.width();
+    this->height = normal.height();
 
+    selected = selectedImage;
+
+    display = normal;
 }
 
 QRectF Symbol::boundingRect() const
@@ -26,6 +30,19 @@ void Symbol::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 
 void Symbol::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    qInfo() << "Mouse press received by Symbol";
     QGraphicsItem::mousePressEvent(event);
+}
+
+void Symbol::focusInEvent(QFocusEvent *event)
+{
+    display = selected;
+    update();
+    QGraphicsItem::focusInEvent(event);
+}
+
+void Symbol::focusOutEvent(QFocusEvent *event)
+{
+    display = normal;
+    update();
+    QGraphicsItem::focusOutEvent(event);
 }

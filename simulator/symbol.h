@@ -2,15 +2,17 @@
 #define SYMBOL_H
 
 #include <QtWidgets>
+#include "schematicitem.h"
 
-class Symbol : public QObject, public QGraphicsItem
+class Symbol : public SchematicItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
 public:
     explicit Symbol(
-        int width, int height, // image size
-        QString &imagePath,
+        const QPixmap &image,
+        const QPixmap &selectedImage,
+        int id,
         QGraphicsItem *parent = nullptr
     );
 
@@ -21,6 +23,8 @@ public:
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *) { emit doubleClicked(); }
+    void focusInEvent(QFocusEvent *event);
+    void focusOutEvent(QFocusEvent *event);
 
 private:
     QPixmap display;

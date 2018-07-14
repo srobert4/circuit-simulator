@@ -40,4 +40,5 @@ HEADERS += \
     node.h \
     wire.h \
     symbol.h \
-    viewport.h
+    viewport.h \
+    schematicitem.h

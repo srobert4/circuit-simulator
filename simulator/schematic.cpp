@@ -37,28 +37,29 @@ Schematic::Schematic(QObject *parent)
 
 // TODO: set pixmaps here with correct size and everything
 // rather than using paths
-void Schematic::setImagePaths(QString &imgPath, QString &dragPath)
+void Schematic::setImagePaths(QString &imgPath, QString &selectedPath, QString &dragPath)
 {
-    imagePath = imgPath;
+    image = QPixmap(imgPath);
+    image = image.scaledToWidth(elementWidth);
+
+    selectedImage = QPixmap(selectedPath);
+    selectedImage = selectedImage.scaledToWidth(elementWidth);
+
     shadowImage = QPixmap(dragPath);
-    shadowImage = shadowImage.scaled(160, 25);
+    shadowImage = shadowImage.scaledToWidth(elementWidth);
 }
 
 // ----------- PRIVATE FUNCTIONS -----------------------------------------------
 
-void Schematic::addElement(QString path) {
-    int width = 160;
-    int height = 24;
-
+void Schematic::addElement() {
     // construct CircuitElement
     int id = elemId++;
     int node1Id = nodeId++;
     int node2Id = nodeId++;
-    CircuitElement *elem = new CircuitElement(
-                width, height, id, node1Id, node2Id, path,
-                TypeKey, IDKey);
-    elem->setPos(lastClickX, lastClickY);
+    CircuitElement *elem = new CircuitElement(id, node1Id, node2Id, image, selectedImage);
+    elem->setPos(gridPos(lastClickX, lastClickY));
     addItem(elem);
+    setFocusItem(elem);
     elements[id] = elem;
 }
 
@@ -99,13 +100,11 @@ void Schematic::stopDrawingWire(Node *endNode)
 void Schematic::addWire(Node *endNode)
 {
     if (endNode == NULL) {
+        qInfo() << "creating a new node";
         endNode = new Node(nodeId, -1, curWire);
         endNode->setPos(curWire->line().x2(), curWire->line().y2());
-        endNode->setData(TypeKey, "node");
-        endNode->setData(IDKey, nodeId);
     }
-    curWire->setData(TypeKey, "wire");
-    curWire->setData(IDKey, wireId);
+
     Wire *wire = new Wire(curWire,
                           activeNode,
                           endNode,
@@ -114,11 +113,30 @@ void Schematic::addWire(Node *endNode)
     activeNode->addWire(wireId);
     endNode->addWire(wireId);
     wires[wireId++] = wire;
+    qInfo() << "Number of elements = " << items().length();
+}
+
+QPointF Schematic::gridPos(QPointF point)
+{
+    return QPointF(int(point.x()) - (int(point.x()) % gridSize), int(point.y()) - (int(point.y()) % gridSize));
+    qreal px = (point.x() < 0 ? point.x() - 5 : point.x() + 5);
+    qreal py = (point.y() < 0 ? point.y() - 5 : point.y() + 5);
+    return QPointF(10 * (px / 10), 10 * (py / 10));
+}
+
+QPointF Schematic::gridPos(qreal x, qreal y)
+{
+    return QPointF(int(x) - (int(x) % gridSize), int(y) - (int(y) % gridSize));
+    qreal px = (x < 0 ? x - 5 : x + 5);
+    qreal py = (y < 0 ? y - 5 : y + 5);
+    return QPointF(10 * (px / 10), 10 * (py / 10));
 }
 
 // ----------- EVENT HANDLERS -----------------------------------------------
 
-/* MouseEvent: mousePressEvent(QMouseEvent *)
+
+
+/* MouseEvent: mouseReleaseEvent(QMouseEvent *)
  * -------------------------------------------
  * If a wire is drawing, stop drawing it.
  * Else, save the position of the click and
@@ -126,7 +144,8 @@ void Schematic::addWire(Node *endNode)
  */
 void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    QGraphicsItem *item = NULL;
+    SchematicItem *item = NULL;
+    qInfo() << event->scenePos();
     switch( mode )
     {
     case Schematic::Build:
@@ -134,7 +153,7 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         lastClickY = event->scenePos().y();
         removeItem(curShadow);
         curShadow = NULL;
-        addElement(imagePath);
+        addElement();
         mode = Schematic::Edit;
 
         emit schematicClicked();
@@ -142,33 +161,39 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
     case Schematic::Draw:
         for (auto it : items(event->scenePos())) {
-            if (it->data(TypeKey) == "node"){
-                item = it;
-                curWire->setLine(0, 0, item->scenePos().x() - startPos.x(), item->scenePos().y() - startPos.y());
+            SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
+            qInfo() << schemIt->getType();
+            if (schemIt->getType() == "node"){
+                curWire->setLine(0, 0, it->scenePos().x() - startPos.x(), it->scenePos().y() - startPos.y());
+                item = schemIt;
                 break;
             }
+        }
+        if (item == 0) {
+            QPointF endPos = gridPos(event->scenePos());
+            curWire->setLine(0, 0, endPos.x() - startPos.x(), endPos.y() - startPos.y());
         }
         stopDrawingWire(qgraphicsitem_cast<Node *>(item));
         mode = Schematic::Edit;
         break;
 
     case Schematic::Edit:
-        item = itemAt(event->scenePos(), QTransform());
+        item = qgraphicsitem_cast<SchematicItem *>(itemAt(event->scenePos(), QTransform()));
         if (!item) break;
 
-        if (item->data(TypeKey).toString() == "node") {
+        if (item->getType() == "node") {
            startPos = item->scenePos();
            activeNode = qgraphicsitem_cast<Node *>(item);
            startDrawingWire();
            mode = Schematic::Draw;
-
-        } else if (item->data(TypeKey).toString() == "element") {
-            item->setFocus();
+        } else if (item->getType() == "element") {
+            item->setPos(gridPos(event->scenePos()));
         }
+
         break;
     }
 
-    QGraphicsScene::mousePressEvent(event);
+    QGraphicsScene::mouseReleaseEvent(event);
 }
 
 /* MouseEvent: mouseMoveEvent(QMouseEvent *)
@@ -184,12 +209,10 @@ void Schematic::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     case Schematic::Build:
         if (curShadow == NULL) {
             curShadow = addPixmap(shadowImage);
-            curShadow->setOffset(-80, -12);
+            curShadow->setOffset(-shadowImage.width() / 2, -shadowImage.height() / 2);
             curShadow->setFlag(QGraphicsItem::ItemIsMovable);
         }
-        qInfo() << "curShadow: " << curShadow;
-        qInfo() << "shadowImage: " << shadowImage;
-        curShadow->setPos(curPos); //TODO: center image on cursor
+        curShadow->setPos(curPos);
         break;
     case Schematic::Draw:
         curWire->setLine(0, 0, curPos.x() - startPos.x(), curPos.y() - startPos.y());
@@ -198,4 +221,38 @@ void Schematic::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         break;
     }
     QGraphicsScene::mouseMoveEvent(event);
+}
+
+void Schematic::dragMoveEvent(QGraphicsSceneDragDropEvent *event)
+{
+    qInfo() << "schematic received drag move event";
+    QGraphicsScene::dragMoveEvent(event);
+}
+
+void Schematic::drawBackground(QPainter *painter, const QRectF &rect)
+{
+    QPen pen = QPen(painter->pen());
+    pen.setColor(Qt::gray);
+    painter->setPen(pen);
+
+    qreal left = int(rect.left()) - (int(rect.left()) % gridSize);
+    qreal top = int(rect.top()) - (int(rect.top()) % gridSize);
+
+    QVarLengthArray<QLineF, 100> lines;
+
+    for (qreal x = left; x < rect.right(); x += gridSize)
+        lines.append(QLineF(x, rect.top(), x, rect.bottom()));
+    for (qreal y = top; y < rect.bottom(); y += gridSize)
+        lines.append(QLineF(rect.left(), y, rect.right(), y));
+
+    painter->drawLines(lines.data(), lines.size());
+}
+
+void Schematic::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Delete) {
+        for (auto it : selectedItems())
+            removeItem(it);
+    }
+    QGraphicsScene::keyReleaseEvent(event);
 }
