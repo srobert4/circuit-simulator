@@ -22,7 +22,6 @@ public:
 protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
-    void dragMoveEvent(QGraphicsSceneDragDropEvent *event);
     void drawBackground(QPainter *painter, const QRectF &rect);
     void keyReleaseEvent(QKeyEvent *event);
 

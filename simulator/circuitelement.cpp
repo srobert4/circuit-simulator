@@ -61,7 +61,10 @@ CircuitElement::CircuitElement(// width/height of image
  */
 QRectF CircuitElement::boundingRect() const
 {
-    return QRectF(-width / 2, -height / 2, width, height); // TODO - include text
+    QRegion imageRect = QRegion(-width / 2, -height / 2, width, height);
+    QRegion labelRect = QRegion(-label->boundingRect().width() / 2, height / 2, label->boundingRect().width(), label->boundingRect().height());
+    QRegion totalRect = imageRect + labelRect;
+    return totalRect.boundingRect();
 }
 
 /* Public Function: paint(...)

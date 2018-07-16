@@ -13,39 +13,38 @@ public:
         SchematicItem(id, "wire", parent)
     {
         setFlag(ItemIsFocusable);
-        this->line = line;
-        line->setZValue(-1);
+        setFlag(ItemIsSelectable);
+        this->line = line->line();
         this->startNode = startNode;
-        this->startNode->setZValue(1);
         this->endNode = endNode;
-        this->endNode->setZValue(1);
-        update();
     }
 
     // required functions
-    QRectF boundingRect() const { return line->boundingRect(); }
+    QRectF boundingRect() const { return QRectF(line.p1(), line.p2()); }
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
     {
-        Q_UNUSED(painter);
         Q_UNUSED(option);
         Q_UNUSED(widget);
+        painter->setPen(Qt::black);
+        if (isSelected())
+            painter->setPen(Qt::red);
+
+        painter->drawLine(this->line);
     }
+
+    void setLine(QGraphicsLineItem *line) { this->line = line->line(); }
 
 protected:
     void focusInEvent(QFocusEvent *event) {
         qInfo() << "wire focused";
-        line->setPen(QPen(Qt::red));
-        line->update();
         QGraphicsItem::focusInEvent(event);
     }
     void focusOutEvent(QFocusEvent *event) {
-        line->setPen(QPen(Qt::black));
-        line->update();
         QGraphicsItem::focusInEvent(event);
     }
 
 private:
-    QGraphicsLineItem *line;
+    QLineF line;
     int id;
     Node *startNode;
     Node *endNode;
