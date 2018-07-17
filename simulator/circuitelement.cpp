@@ -5,10 +5,9 @@
  * Create and initialize symbol, label and dialog box
  */
 CircuitElement::CircuitElement(
-        const QPixmap image,
-        const QPixmap selectedImage,
+        const ElementProperties properties,
         QGraphicsItem *parent
-) : SchematicItem("element", parent) // TODO later change type to arg and name by element type e.g. resistor
+) : SchematicItem("element", parent)
 {
     setFlag(ItemIsSelectable, true);
     setFlag(ItemIsFocusable, true);
@@ -16,28 +15,38 @@ CircuitElement::CircuitElement(
     setAcceptHoverEvents(true);
 
     // Create symbol
-    normal = image;
+    normal = properties.image;
     this->_width = normal.width();
     this->_height = normal.height();
 
-    selected = selectedImage;
+    selected = properties.selected;
     display = selected; // icon is selected when placed
     setSelected(true);
 
+    if (!properties.hasLabel) return;
+
     // create Dialog box
-    dialogBox = createDialogBox();
+    QString mu;
+    const QChar MathSymbolSigma(0x03BC);
+    mu.setUnicode(&MathSymbolSigma, 1);
+    unitModifiers = { "", "T", "G", "M", "K", "m", mu, "n", "p", "f" };
+    dialogBox = createDialogBox(properties.prefix,
+                                properties.units,
+                                properties.allowsExternalInput);
 
     // Initialize label
-    name = "element name";
-    value = "xx.xx";
-    units = "--";
+    prefix = properties.prefix;
+    name = "";
+    value = "";
+    unitMod = "";
+    units = properties.units;
 
     // Label doesn't inherit SchematicItem so set data ourselves
-    label = new QGraphicsSimpleTextItem(name + "\n" + value + units, this);
+    label = new QGraphicsSimpleTextItem(prefix + name + "\n" + value + units, this);
     label->setData(TypeKey, "label");
 
     // Set children positions using child->setPos(pos relative to symbol)
-    label->setPos(-label->boundingRect().width() / 2, image.height() / 2);
+    label->setPos(-label->boundingRect().width() / 2, _height / 2);
 }
 
 // ========= PUBLIC FUNCTIONS ================================
@@ -82,34 +91,92 @@ void CircuitElement::setNodes(Node *nodeOne, Node *nodeTwo)
  * Create the dialog box that pops up
  * when the element is double clicked.
  */
-QDialog *CircuitElement::createDialogBox()
+QDialog *CircuitElement::createDialogBox(QString prefix,
+                                         QString units,
+                                         bool allowsExternalInput)
 {
     QDialog *dialog = new QDialog();
-    dialog->setModal(true);
 
-    QLabel *nameLabel = new QLabel("Element Name: ");
+    QLabel *nameLabel = new QLabel("Name: ");
+    QLabel *prefixLabel = new QLabel(prefix);
     nameLineEdit = new QLineEdit;
 
     QLabel *valueLabel = new QLabel("Value: ");
     valueLineEdit = new QLineEdit;
-
-    QLabel *unitsLabel = new QLabel("Units: ");
     unitsComboBox = new QComboBox;
-    unitsComboBox->addItems({"--", "Ohms", "Farads"});
+    unitsComboBox->addItems(unitModifiers);
+    QLabel *unitsLabel = new QLabel(units);
 
     QPushButton *cancelButton = new QPushButton("Cancel");
     QPushButton *doneButton  = new QPushButton("Done");
     doneButton->setDefault(true);
 
     QGridLayout *layout = new QGridLayout;
+
     layout->addWidget(nameLabel, 0, 0);
-    layout->addWidget(nameLineEdit, 0, 1, 1, 2);
+    layout->addWidget(prefixLabel, 0, 1, Qt::AlignRight);
+    layout->addWidget(nameLineEdit, 0, 2, 1, 4);
+
     layout->addWidget(valueLabel, 1, 0);
-    layout->addWidget(valueLineEdit, 1, 1, 1, 2);
-    layout->addWidget(unitsLabel, 2, 0);
-    layout->addWidget(unitsComboBox, 2, 1, 1, 2);
-    layout->addWidget(cancelButton, 3, 1);
-    layout->addWidget(doneButton, 3, 2);
+
+    if (allowsExternalInput) {
+        // --- TOGGLE EXTENSIONS BUTTONS ---
+        QRadioButton *constButton = new QRadioButton("Constant value");
+        QRadioButton *externalButton = new QRadioButton("External value");
+        QButtonGroup *valueTypeButtons = new QButtonGroup;
+        valueTypeButtons->addButton(constButton);
+        valueTypeButtons->addButton(externalButton);
+        valueTypeButtons->setExclusive(true);
+
+        layout->addWidget(constButton, 1, 2);
+        layout->addWidget(externalButton, 1, 3);
+
+        // --- CONST VALUE OPTIONS ---
+        constValueExt = new QWidget;
+        QGridLayout *constValueLayout = new QGridLayout;
+        constValueLayout->addWidget(valueLineEdit, 0, 2, 1, 2);
+        constValueLayout->addWidget(unitsComboBox, 0, 4);
+        constValueLayout->addWidget(unitsLabel, 0, 5);
+        constValueExt->setLayout(constValueLayout);
+
+        // --- EXTERNAL VALUE OPTIONS ---
+        extValueExt = new QWidget;
+        QLabel *browserLabel = new QLabel("File containing values: ");
+        valueFileLineEdit = new QLineEdit;
+        QPushButton *browseButton = new QPushButton("Browse");
+        QHBoxLayout *extValueLayout = new QHBoxLayout;
+
+        connect(browseButton, &QPushButton::pressed,
+                [=](){ valueFileLineEdit->setText( QFileDialog::getOpenFileName(
+                                                        extValueExt,
+                                                        "Choose input file",
+                                                        "/home",
+                                                        "All files (*.*)") ); });
+
+        extValueLayout->addWidget(browserLabel);
+        extValueLayout->addWidget(valueFileLineEdit);
+        extValueLayout->addWidget(browseButton);
+        extValueExt->setLayout(extValueLayout);
+
+        // --- CONNECT EXTENSIONS ---
+        layout->addWidget(constValueExt, 2, 1, 1, 5);
+        layout->addWidget(extValueExt, 2, 1, 1, 5);
+        constValueExt->hide();
+        extValueExt->hide();
+
+        connect(constButton, &QRadioButton::toggled, constValueExt, &QWidget::setVisible);
+        connect(constButton, &QRadioButton::toggled, extValueExt, &QWidget::setHidden);
+        connect(externalButton, &QRadioButton::toggled, constValueExt, &QWidget::setHidden);
+        connect(externalButton, &QRadioButton::toggled, extValueExt, &QWidget::setVisible);
+    } else {
+        layout->addWidget(valueLineEdit, 1, 2, 1, 2);
+        layout->addWidget(unitsComboBox, 1, 4);
+        layout->addWidget(unitsLabel, 1, 5);
+    }
+
+    layout->addWidget(cancelButton, 3, 3);
+    layout->addWidget(doneButton, 3, 4);
+
     dialog->setLayout(layout);
 
     QApplication::connect(cancelButton, SIGNAL(clicked(bool)),
@@ -144,9 +211,13 @@ void CircuitElement::processDialogInput()
 {
     name = nameLineEdit->text();
     value = valueLineEdit->text();
-    units = unitsComboBox->currentText();
-
-    label->setText(name + "\n" + value + units);
+    unitMod = unitsComboBox->currentText();
+    if (valueFileLineEdit->text() != "") {
+        value = "External";
+        label->setText(prefix + name + "\n" + value);
+    } else {
+        label->setText(prefix + name + "\n" + value + unitMod + units);
+    }
     label->setPos(-label->boundingRect().width() / 2, this->boundingRect().height() / 2);
 }
 

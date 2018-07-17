@@ -9,12 +9,17 @@ class ElementSelector : public QWidget
     Q_OBJECT
 public:
     explicit ElementSelector(Schematic *schematic, QWidget *parent = nullptr);
-    void addButton(const QString &elemType,
+    void addButton(const QString &buttonLabel,
                    const QString &imgPath,
                    const QString &imgSelectedPath,
-                   const QString &imgShadowPath);
-    QString getElementPath();
-    QString getElementName();
+                   const QString &imgShadowPath,
+                   bool hasLabel,
+                   bool allowsExternalInput,
+                   QString prefix,
+                   QString units,
+                   qreal widthRatio);
+    //QString getElementPath();
+    //QString getElementName();
 
 protected:
     void mousePressEvent(QMouseEvent *) { deselectAll(); }
@@ -23,12 +28,11 @@ private:
     QGridLayout *layout;
     QButtonGroup *buttons;
     Schematic *schematic;
-    QMap<int, QString> imagePaths;
-    QMap<int, QString> imageSelectedPaths;
+    QMap<int, CircuitElement::ElementProperties> properties;
     QMap<int, QString> shadowImagePaths;
-    QMap<int, QString> elementTypes;
     int curId = 1;
     bool deselectOnRelease;
+    const int elementWidth = 160;
 
     void deselectAll();
 

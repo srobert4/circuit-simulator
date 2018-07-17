@@ -10,9 +10,21 @@ class CircuitElement : public SchematicItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
+
 public:
+    struct ElementProperties
+    {
+        QPixmap image;
+        QPixmap selected;
+        bool hasLabel;
+        bool allowsExternalInput;
+        QString prefix;
+        QString units;
+        qreal widthRatio;
+    };
+
     explicit CircuitElement(
-        const QPixmap image, const QPixmap selectedImage,
+        const CircuitElement::ElementProperties properties,
         QGraphicsItem *parent = nullptr
     );
 
@@ -43,18 +55,24 @@ private:
     Node *nodeTwo;
 
     // Store parameters
+    QString prefix;
     QString name;
     QString value;
+    QString unitMod;
     QString units;
 
     // Dialog box
     QDialog *dialogBox;
     QLineEdit *nameLineEdit;
     QLineEdit *valueLineEdit;
+    QLineEdit *valueFileLineEdit;
     QComboBox *unitsComboBox;
+    QList<QString> unitModifiers;
+    QWidget *constValueExt;
+    QWidget *extValueExt;
 
     // Private functions
-    QDialog *createDialogBox();
+    QDialog *createDialogBox(QString prefix, QString units, bool allowsExternalInput);
     void setupDialog();
     void processDialogInput();
 };

@@ -25,7 +25,7 @@ ElementSelector::ElementSelector(Schematic *schematic, QWidget *parent
     setLayout(layout);
 }
 
-// ----------- PUBLIC FUNCTIONS -----------------------------------------------
+// ============ PUBLIC FUNCTIONS ===========================================
 
 /* Public Function: addButton(const QString &, const QString &)
  * ------------------------------------------------------------
@@ -35,15 +35,18 @@ ElementSelector::ElementSelector(Schematic *schematic, QWidget *parent
  * integer ID which is used to associate buttons with path names
  * and element types.
  */
-void ElementSelector::addButton(
-        const QString &elemType,
-        const QString &imgPath,
-        const QString &imgSelectedPath,
-        const QString &imgShadowPath
-        )
+void ElementSelector::addButton(const QString &buttonLabel,
+                                const QString &imgPath,
+                                const QString &imgSelectedPath,
+                                const QString &imgShadowPath,
+                                bool hasLabel,
+                                bool allowsExternalInput,
+                                QString prefix,
+                                QString units,
+                                qreal widthRatio)
 {
     // create button
-    QPushButton *button = new QPushButton(elemType, this);
+    QPushButton *button = new QPushButton(buttonLabel, this);
     button->setCheckable(true);
 
     // add button to selector
@@ -51,39 +54,25 @@ void ElementSelector::addButton(
     layout->addWidget(button, curId, 0);
 
     // associate with path and element
-    imagePaths[curId] = imgPath;
-    imageSelectedPaths[curId] = imgSelectedPath;
+    CircuitElement::ElementProperties elementProperties;
+    elementProperties.image = QPixmap(imgPath);
+    elementProperties.image = elementProperties.image.scaledToWidth(elementWidth * widthRatio);
+
+    elementProperties.selected = QPixmap(imgSelectedPath);
+    elementProperties.selected = elementProperties.selected.scaledToWidth(elementWidth * widthRatio);
+
+    elementProperties.hasLabel = hasLabel;
+    elementProperties.allowsExternalInput = allowsExternalInput;
+
+    elementProperties.prefix = prefix;
+    elementProperties.units = units;
+
     shadowImagePaths[curId] = imgShadowPath;
-    elementTypes[curId] = elemType;    
+    properties[curId] = elementProperties;
     curId++;
 }
 
-/* Public Function: getElementName()
- * ---------------------------------
- * Returns the element type of the currently checked
- * button or the empty string if no button is checked.
- */
-QString ElementSelector::getElementName()
-{
-    int checked = buttons->checkedId();
-    if (checked == -1)
-        return "";
-    return elementTypes[checked];
-}
-
-/* Public Function: getElementPath()
- * ---------------------------------
- * Returns the image path of the currently checked
- * button or the empty string if no button is checked.
- */
-QString ElementSelector::getElementPath()
-{
-    int checked = buttons->checkedId();
-    if (checked == -1)
-        return "";
-    return imagePaths[checked];
-}
-// ----------- PRIVATE FUNCTIONS ------------------------------
+// =========== PRIVATE FUNCTIONS ================================
 
 /* Slot: deselectAll()
  * --------------------
@@ -98,7 +87,7 @@ void ElementSelector::deselectAll()
     buttons->setExclusive(true);
 }
 
-// ----------- SLOTS -----------------------------------------------
+// ============= SLOTS ==========================================
 
 /* Slot: slotButtonPressed(int)
  * ----------------------------
@@ -126,7 +115,6 @@ void ElementSelector::slotButtonReleased(int id)
         return;
     }
     schematic->setMode(Schematic::Build);
-    schematic->setImagePaths(imagePaths[id],
-                             imageSelectedPaths[id],
-                             shadowImagePaths[id]);
+    schematic->setElementProperties(properties[id],
+                                    shadowImagePaths[id]);
 }

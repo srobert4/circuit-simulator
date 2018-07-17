@@ -13,25 +13,20 @@ Schematic::Schematic(QObject *parent)
 
 // ============ PUBLIC FUNCTIONS ================================
 
-/* Public Function: setImagePaths(QString&, QString&, QString&)
+/* Public Function: setElementProperties(...)
  * ------------------------------------------------------------
- * Called by mainWindow to set the image paths for the selected
- * element.
+ * Called by mainWindow to set the element properties for the
+ * selected element. Store properties for use in addElement()
  *
- * imgPath - normal black image
+ * imagePath - normal black image
  * selectedPath - red image shown when element is selected
- * dragPath - grey image shown when image is being placed
+ * shadowPath - grey image shown when image is being placed
  */
-void Schematic::setImagePaths(QString &imgPath, QString &selectedPath, QString &dragPath)
+void Schematic::setElementProperties(CircuitElement::ElementProperties &properties, QString &shadowPath)
 {
-    image = QPixmap(imgPath);
-    image = image.scaledToWidth(elementWidth);
-
-    selectedImage = QPixmap(selectedPath);
-    selectedImage = selectedImage.scaledToWidth(elementWidth);
-
-    shadowImage = QPixmap(dragPath);
-    shadowImage = shadowImage.scaledToWidth(elementWidth);
+    elementProperties = properties;
+    shadowImage = QPixmap(shadowPath);
+    shadowImage = shadowImage.scaledToWidth(properties.image.width());
 }
 
 // ============ PRIVATE FUNCTIONS ================================
@@ -46,7 +41,7 @@ void Schematic::setImagePaths(QString &imgPath, QString &selectedPath, QString &
  * end of the element.
  */
 void Schematic::addElement() {
-    CircuitElement *elem = new CircuitElement(image, selectedImage);
+    CircuitElement *elem = new CircuitElement(elementProperties);
     elem->setPos(gridPos(lastClickX, lastClickY));
 
     Node *nodeOne = new Node(elem, elem);

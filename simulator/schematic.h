@@ -9,13 +9,15 @@
 class Schematic : public QGraphicsScene
 {
     Q_OBJECT
+
 public:
     explicit Schematic(QObject *parent = nullptr);
     enum Mode { Edit, Build, Draw };
     Q_ENUM(Mode)
 
     void setMode(Mode mode) { this->mode = mode; }
-    void setImagePaths(QString &imgPath, QString &selectedPath, QString &dragPath);
+    void setElementProperties(CircuitElement::ElementProperties &properties,
+                              QString &shadowPath);
 
 protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
@@ -29,13 +31,11 @@ signals:
 private:
     Mode mode;
     const int gridSize = 20;
-    const int elementWidth = 160;
 
     // Displaying elements
-    QGraphicsPixmapItem *curShadow;   
-    QPixmap image;
-    QPixmap selectedImage;
+    QGraphicsPixmapItem *curShadow;
     QPixmap shadowImage;
+    CircuitElement::ElementProperties elementProperties;
 
     // Track mouse
     QPointF curPos;
