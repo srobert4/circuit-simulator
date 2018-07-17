@@ -2,40 +2,26 @@
 
 /* Constructor: Schematic(QWidget *)
  * ---------------------------------
- * Allow mouse tracking so that wires
- * can be drawn without drag. Initialize
- * instance variables. Connect click signal
- * to parent slot.
+ * Initialize to edit mode.
  */
 Schematic::Schematic(QObject *parent)
     : QGraphicsScene(parent)
 {
-    elemId = 0;
-    nodeId = 0;
-    wireId = 0;
-
     curShadow = NULL;
-
     mode = Schematic::Edit;
 }
 
-// ----------- PUBLIC FUNCTIONS -----------------------------------------------
+// ============ PUBLIC FUNCTIONS ================================
 
-/* Public Function: addElement(QString)
- * ------------------------------------
- * Adds a new element to the Schematic centered at
- * the last point clicked with the mouse, with the
- * image at the given path.
+/* Public Function: setImagePaths(QString&, QString&, QString&)
+ * ------------------------------------------------------------
+ * Called by mainWindow to set the image paths for the selected
+ * element.
  *
- * This function also creates two nodes, one for each
- * end of the element.
- *
- * The element and both nodes are given ID numbers and
- * tracked.
+ * imgPath - normal black image
+ * selectedPath - red image shown when element is selected
+ * dragPath - grey image shown when image is being placed
  */
-
-// TODO: set pixmaps here with correct size and everything
-// rather than using paths
 void Schematic::setImagePaths(QString &imgPath, QString &selectedPath, QString &dragPath)
 {
     image = QPixmap(imgPath);
@@ -48,14 +34,19 @@ void Schematic::setImagePaths(QString &imgPath, QString &selectedPath, QString &
     shadowImage = shadowImage.scaledToWidth(elementWidth);
 }
 
-// ----------- PRIVATE FUNCTIONS -----------------------------------------------
+// ============ PRIVATE FUNCTIONS ================================
 
+/* Private Function: addElement()
+ * ------------------------------------
+ * Adds a new element to the Schematic centered at
+ * the last point clicked with the mouse, with the currently
+ * selected image (stored at image).
+ *
+ * This function also creates two nodes, one for each
+ * end of the element.
+ */
 void Schematic::addElement() {
-    // construct CircuitElement
-    int id = elemId++;
-    int node1Id = nodeId++;
-    int node2Id = nodeId++;
-    CircuitElement *elem = new CircuitElement(id, node1Id, node2Id, image, selectedImage);
+    CircuitElement *elem = new CircuitElement(image, selectedImage);
     elem->setPos(gridPos(lastClickX, lastClickY));
 
     Node *nodeOne = new Node(elem, elem);
@@ -67,13 +58,12 @@ void Schematic::addElement() {
 
     addItem(elem);
     setFocusItem(elem);
-    elements[id] = elem;
 }
 
-/* Private Function: startDrawingWire(QPoint, int)
+/* Private Function: startDrawingWire()
  * -----------------------------------------------
- * Sets start position and start node for a wire.
- * Sets drawing to true.
+ * Creates a new node to be dragged around and
+ * connects it to the starting node.
  */
 void Schematic::startDrawingWire()
 {
@@ -83,43 +73,54 @@ void Schematic::startDrawingWire()
     addItem(activeNode);
 }
 
-/* Private Function: stopDrawingWire(QPoint, int)
+/* Private Function: stopDrawingWire(Node*)
  * ----------------------------------------------
- * Sets drawing to false. Clears drawn wire.
- * Adds new Wire element corresponding to drawn wire.
+ * Snap node to grid or to existing end node.
+ * Clear startNode and activeNode instance vars.
  */
 void Schematic::stopDrawingWire(Node *endNode)
 {
     if (endNode != nullptr) {
         startNode->connectNode(endNode);
         delete activeNode;
+    } else {
+        activeNode->setPos(gridPos(activeNode->scenePos()));
     }
     startNode = NULL;
     activeNode = NULL;
 }
 
+/* Private Function: gridPos(qreal x, qreal y)
+ * -------------------------------------------
+ * Returns the grid position at the upper diagonal
+ * to the given point (x,y).
+ *
+ * TODO: snap to closest point.
+ */
+QPointF Schematic::gridPos(qreal x, qreal y)
+{
+    return QPointF(int(x) - (int(x) % gridSize), int(y) - (int(y) % gridSize));
+}
+
+/* Private Function: gridPos(QPointF)
+ * ----------------------------------
+ * Overloaded convenience function.
+ */
 QPointF Schematic::gridPos(QPointF point)
 {
     return gridPos(point.x(), point.y());
 }
 
-QPointF Schematic::gridPos(qreal x, qreal y)
-{
-    return QPointF(int(x) - (int(x) % gridSize), int(y) - (int(y) % gridSize));
-    qreal px = (x < 0 ? x - 5 : x + 5);
-    qreal py = (y < 0 ? y - 5 : y + 5);
-    return QPointF(10 * (px / 10), 10 * (py / 10));
-}
-
-// ----------- EVENT HANDLERS -----------------------------------------------
-
-
+// ============= EVENT HANDLERS ================================
 
 /* MouseEvent: mouseReleaseEvent(QMouseEvent *)
  * -------------------------------------------
- * If a wire is drawing, stop drawing it.
- * Else, save the position of the click and
- * ask the MainWindow for an element to add.
+ * Mode: Build
+ *    - Add element
+ * Mode: Draw
+ *    - Place node
+ * Mode: Edit
+ *    - Move item or start drawing
  */
 void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
@@ -127,17 +128,25 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     switch( mode )
     {
     case Schematic::Build:
+        // store click position
         lastClickX = event->scenePos().x();
         lastClickY = event->scenePos().y();
+
+        // stop displaying shadow
         removeItem(curShadow);
+        delete curShadow;
         curShadow = NULL;
+
+        // add element
         addElement();
         mode = Schematic::Edit;
 
+        // tell selector to deselect all
         emit schematicClicked();
         break;
 
     case Schematic::Draw:
+        // Find out if stopped on a node or not
         for (auto it : items(event->scenePos())) {
             SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
             if (schemIt != activeNode && schemIt->getType() == "node"){
@@ -145,14 +154,17 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
                 break;
             }
         }
+        // Place wire and exit drawing mode
         stopDrawingWire(qgraphicsitem_cast<Node *>(item));
         mode = Schematic::Edit;
         break;
 
     case Schematic::Edit:
+        // If we didn't click on anything, do nothing
         item = qgraphicsitem_cast<SchematicItem *>(itemAt(event->scenePos(), QTransform()));
         if (!item) break;
 
+        // Either start drawing or move an element
         if (item->getType() == "node") {
            startNode = qgraphicsitem_cast<Node *>(item);
            startDrawingWire();
@@ -171,8 +183,11 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
 /* MouseEvent: mouseMoveEvent(QMouseEvent *)
  * ----------------------------------------
- * If drawing, update the wire to reach the
- * current mouse position.
+ * Build mode:
+ *      - move shadow
+ * Draw mode:
+ *      - move activeNode
+ * Edit mode: nothing
  */
 void Schematic::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
@@ -224,7 +239,7 @@ void Schematic::drawBackground(QPainter *painter, const QRectF &rect)
  * Delete - delete selected items
  * r/right arrow - rotate selected items cw // TODO
  * R/left arrow - rotate selected items ccw // TODO
- * Esc - deselect all items
+ * Esc - deselect all items, stop drawing wire if drawing
  */
 void Schematic::keyReleaseEvent(QKeyEvent *event)
 {
@@ -232,11 +247,19 @@ void Schematic::keyReleaseEvent(QKeyEvent *event)
     {
     case  Qt::Key_Delete:
         for (auto it : selectedItems()) {
-            delete it;
+            SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
+            if (schemIt->getType() != "")
+                delete it;
         }
         break;
 
-    case Qt::Key_Escape: // TODO check mode
+    case Qt::Key_Escape:
+        if (mode == Schematic::Draw) {
+            delete activeNode;
+            activeNode = NULL;
+            startNode = NULL;
+            mode = Schematic::Edit;
+        }
         for (auto it : selectedItems())
             it->setSelected(false);
         break;

@@ -27,6 +27,23 @@ MainWindow::MainWindow(QWidget *parent)
                         "/home/srobertson/Downloads/capacitor.png",
                         "/home/srobertson/Downloads/capacitorSelected.png",
                         "/home/srobertson/Downloads/capacitorShadow.png");
+    selector->addButton("Inductor",
+                        "/home/srobertson/Downloads/inductor.png",
+                        "/home/srobertson/Downloads/inductorSelected.png",
+                        "/home/srobertson/Downloads/inductorShadow.png");
+    selector->addButton("Ground",
+                        "/home/srobertson/Downloads/ground.png",
+                        "/home/srobertson/Downloads/groundSelected.png",
+                        "/home/srobertson/Downloads/groundShadow.png");
+    selector->addButton("Pressure",
+                        "/home/srobertson/Downloads/voltageSource.png",
+                        "/home/srobertson/Downloads/voltageSourceSelected.png",
+                        "/home/srobertson/Downloads/voltageSourceShadow.png");
+    selector->addButton("Flow",
+                        "/home/srobertson/Downloads/currentSource.png",
+                        "/home/srobertson/Downloads/currentSourceSelected.png",
+                        "/home/srobertson/Downloads/currentSourceShadow.png");
+
 
     // Set up schematic graphics view
     view = new QGraphicsView(schem, this);

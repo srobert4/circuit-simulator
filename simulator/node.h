@@ -30,6 +30,7 @@ public:
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 
+    // connecting/disconnecting functions
     void connectNode(Node *node);
 
     void addXNode(Node::Connection c) { xNodes.append(c); }
@@ -51,7 +52,8 @@ protected:
 
 private:
     const int rad = 5;
-    QVector<Node::Connection> xNodes, yNodes; // we draw X for xNodes and Y for yNodes
+    QVector<Node::Connection> xNodes, yNodes; // we draw horizontal segment for xNodes
+                                              // and vertical segment for yNodes
     QColor line;
     QColor fill;
     QPen wire;

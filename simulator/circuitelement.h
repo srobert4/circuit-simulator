@@ -4,7 +4,6 @@
 #include <QApplication>
 #include <QtWidgets>
 
-#include "symbol.h"
 #include "node.h"
 
 class CircuitElement : public SchematicItem
@@ -13,7 +12,6 @@ class CircuitElement : public SchematicItem
     Q_INTERFACES(QGraphicsItem)
 public:
     explicit CircuitElement(
-        int id, int nodeOneID, int nodeTwoID, // IDs
         const QPixmap image, const QPixmap selectedImage,
         QGraphicsItem *parent = nullptr
     );
@@ -27,8 +25,6 @@ public:
     void setNodes(Node *nodeOne, Node *nodeTwo);
     Node *getNodeOne() { return nodeOne; }
     Node *getNodeTwo() { return nodeTwo; }
-    void setNodeIds(int nodeOne, int nodeTwo);
-    void getNodeIds(int &nodeOne, int&nodeTwo);
 
 protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
@@ -39,9 +35,6 @@ protected:
     void focusOutEvent(QFocusEvent *event);
 
 private:
-    // ID numbers
-    int nodeOneId, nodeTwoId;
-
     // GraphicsItems
     int _width, _height;
     QPixmap display, normal, selected;

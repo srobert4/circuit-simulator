@@ -1,13 +1,12 @@
 #include "node.h"
 
-/* Constructor: Node(int, int, int, QWidget *)
+/* Constructor: Node(SchematicItem*, QGraphicsItem*)
  * -------------------------------------------
- * Create node of radius 5 pixels
- * and associate given id number.
- * TODO: make size less hardcoded.
+ * Create node and set flags. Make moveable and visible
+ * if not associated with an element.
  */
 Node::Node(SchematicItem *element, QGraphicsItem *parent) :
-    SchematicItem(-1, "node", parent)
+    SchematicItem("node", parent)
 {
     setAcceptHoverEvents(true);
     setFlag(ItemIsSelectable);
@@ -23,6 +22,12 @@ Node::Node(SchematicItem *element, QGraphicsItem *parent) :
     if (element) hideNode();
 }
 
+/* Destructor: ~Node()
+ * -------------------
+ * Remove the node from all connected
+ * nodes tracking list so that no wires
+ * are drawn to it anymore.
+ */
 Node::~Node()
 {
     Connection thisC;
@@ -33,7 +38,7 @@ Node::~Node()
         c.node->removeXNode(thisC);
 }
 
-// ----------- PUBLIC FUNCTIONS ----------------
+// ========= PUBLIC FUNCTIONS ============================
 
 /* Public Function: boundingRect()
  * -------------------------------
@@ -68,6 +73,13 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
 }
 
+/* Public Function: connectNode(Node*)
+ * -----------------------------------
+ * Connect this node to the given node.
+ * This function decides whether this
+ * node will be drawing the x or y section
+ * of the wire, depending on relative positions.
+ */
 void Node::connectNode(Node *node)
 {
     Connection cnx;
@@ -102,15 +114,35 @@ void Node::connectNode(Node *node)
     }
 }
 
+/* Public Function: removeXNode(Connection)
+ * ----------------------------------------
+ * Remove the given node connection from
+ * the list of nodes for which this node
+ * draws the horizontal wire section.
+ */
 void Node::removeXNode(Connection c)
 {
+    if (xNodes.indexOf(c) == -1) {
+        qInfo() << "node not found";
+        return;
+    }
     Connection cnx = xNodes[xNodes.indexOf(c)];
     cnx.line->setLine(0, 0, 0, 0);
     xNodes.removeOne(cnx);
 }
 
+/* Public Function: removeYNode(Connection)
+ * ----------------------------------------
+ * Remove the given node connection from
+ * the list of nodes for which this node
+ * draws the vertical wire section.
+ */
 void Node::removeYNode(Connection c)
 {
+    if (yNodes.indexOf(c) == -1) {
+        qInfo() << "node not found";
+        return;
+    }
     Connection cnx = yNodes[yNodes.indexOf(c)];
     cnx.line->setLine(0, 0, 0, 0);
     yNodes.removeOne(cnx);
@@ -138,9 +170,9 @@ void Node::showNode()
     update();
 }
 
-// ----------- EVENT HANDLERS ------------------
+// ============= EVENT HANDLERS =============================
 
-/* Event: hoverEnterEvent(QEvent *)
+/* Event: hoverEnterEvent(...)
  * ---------------------------
  * Show node on hover
  *
@@ -151,7 +183,7 @@ void Node::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
     QGraphicsItem::hoverEnterEvent(event);
 }
 
-/* Event: leaveEvent(QEvent *)
+/* Event: leaveEvent(...)
  * ---------------------------
  * Hide node after hover
  */
@@ -161,6 +193,11 @@ void Node::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
     QGraphicsItem::hoverLeaveEvent(event);
 }
 
+/* Item Change: itemChange(...)
+ * ----------------------------
+ * Update wires and tell connected nodes
+ * to update their sections when the node moves.
+ */
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     if (change == QGraphicsItem::ItemScenePositionHasChanged) {
@@ -171,6 +208,12 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     return QGraphicsItem::itemChange(change, value);
 }
 
+/* Focus Event: focusInEvent(...)
+ * ------------------------------
+ * Set wire and line color to red.
+ *
+ * TODO: Tell connected nodes to do this too.
+ */
 void Node::focusInEvent(QFocusEvent *event)
 {
     wire.setColor(Qt::red);
@@ -180,6 +223,12 @@ void Node::focusInEvent(QFocusEvent *event)
     QGraphicsItem::focusInEvent(event);
 }
 
+/* Focus Event: focusOutEvent(...)
+ * -------------------------------
+ * Set wire and line color to black.
+ *
+ * TODO: Tell connected nodes to do this too.
+ */
 void Node::focusOutEvent(QFocusEvent *event)
 {
     wire.setColor(Qt::black);

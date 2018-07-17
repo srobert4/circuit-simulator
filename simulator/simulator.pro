@@ -29,9 +29,7 @@ SOURCES += \
     schematic.cpp \
     circuitelement.cpp \
     elementselector.cpp \
-    node.cpp \
-    symbol.cpp \
-    wire.cpp
+    node.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,7 +37,4 @@ HEADERS += \
     circuitelement.h \
     elementselector.h \
     node.h \
-    wire.h \
-    symbol.h \
-    viewport.h \
     schematicitem.h

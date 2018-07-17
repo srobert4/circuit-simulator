@@ -1,17 +1,14 @@
 #include "circuitelement.h"
 
-/* Constructor: CircuitElement(int, int, int, int, int, QString, QWidget *)
+/* Constructor: CircuitElement(const QPixmap, const QPixmap, QGraphicsItem*)
  * ------------------------------------------------------------------------
- * Constructs a CircuitElement object at position (x,y) and adds the
- * image at the given imagePath and a default label. Creates a dialogBox
- * to set the label values on double click.
+ * Create and initialize symbol, label and dialog box
  */
-CircuitElement::CircuitElement(// width/height of image
-        int id, int nodeOneID, int nodeTwoID,
+CircuitElement::CircuitElement(
         const QPixmap image,
         const QPixmap selectedImage,
         QGraphicsItem *parent
-) : SchematicItem(id, "element", parent) // later change type to arg and name by element type e.g. resistor
+) : SchematicItem("element", parent) // TODO later change type to arg and name by element type e.g. resistor
 {
     setFlag(ItemIsSelectable, true);
     setFlag(ItemIsFocusable, true);
@@ -33,39 +30,30 @@ CircuitElement::CircuitElement(// width/height of image
     // Initialize label
     name = "element name";
     value = "xx.xx";
-    units = "unit";
-
-    // Add Nodes
-    this->nodeOneId = nodeOneID;
-    this->nodeTwoId = nodeTwoID;
+    units = "--";
 
     // Label doesn't inherit SchematicItem so set data ourselves
     label = new QGraphicsSimpleTextItem(name + "\n" + value + units, this);
     label->setData(TypeKey, "label");
-    label->setData(IDKey, id);
 
     // Set children positions using child->setPos(pos relative to symbol)
     label->setPos(-label->boundingRect().width() / 2, image.height() / 2);
 }
 
-// ----------- PUBLIC FUNCTIONS -----------------------------------------------
+// ========= PUBLIC FUNCTIONS ================================
 
 /* Public Function: boundingRect()
  * -------------------------------
- * Required for QGraphicsItem. Returns
- * null QRectF since contains no items.
+ * Bounding rect is bounding rect of image
  */
 QRectF CircuitElement::boundingRect() const
 {
-    QRegion imageRect = QRegion(-_width / 2, -_height / 2, _width, _height);
-    QRegion labelRect = QRegion(-label->boundingRect().width() / 2, _height / 2, label->boundingRect().width(), label->boundingRect().height());
-    QRegion totalRect = imageRect + labelRect;
-    return totalRect.boundingRect();
+    return QRectF(-_width / 2, -_height / 2, _width, _height);
 }
 
 /* Public Function: paint(...)
  * ---------------------------
- * Render symbol pixmap
+ * Render symbol pixmap - either selected or normal
  */
 void CircuitElement::paint(QPainter *painter,
                            const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -76,34 +64,18 @@ void CircuitElement::paint(QPainter *painter,
     painter->drawPixmap(-_width/2, -_height/2, display);
 }
 
-/* Public Function: setNodeIds(int, int)
- * -------------------------------------
- * Associates the element nodes with the
- * IDs tracked by the Schematic.
+/* Public Function: setNodes(Node*, Node*)
+ * ---------------------------------------
+ * Provide pointers to the Node objects associated
+ * with this element.
  */
-void CircuitElement::setNodeIds(int nodeOne, int nodeTwo)
-{
-    this->nodeOneId = nodeOne;
-    this->nodeTwoId = nodeTwo;
-}
-
-/* Public Function: getNodeIds(int&, int&)
- * -------------------------------------
- * Sets arguments to node IDS for two nodes
- */
-void CircuitElement::getNodeIds(int &nodeOne, int &nodeTwo)
-{
-    nodeOne = this->nodeOneId;
-    nodeTwo = this->nodeTwoId;
-}
-
 void CircuitElement::setNodes(Node *nodeOne, Node *nodeTwo)
 {
     this->nodeOne = nodeOne;
     this->nodeTwo = nodeTwo;
 }
 
-// ----------- PRIVATE FUNCTIONS --------------------------
+// ========= PRIVATE FUNCTIONS =========================
 
 /* Private Function: createDialogBox()
  * -----------------------------------
@@ -123,7 +95,7 @@ QDialog *CircuitElement::createDialogBox()
 
     QLabel *unitsLabel = new QLabel("Units: ");
     unitsComboBox = new QComboBox;
-    unitsComboBox->addItems({"Ohms", "Farads"});
+    unitsComboBox->addItems({"--", "Ohms", "Farads"});
 
     QPushButton *cancelButton = new QPushButton("Cancel");
     QPushButton *doneButton  = new QPushButton("Done");
@@ -179,20 +151,28 @@ void CircuitElement::processDialogInput()
 }
 
 
-// ----------- EVENT HANDLERS -------------------------
+// ========= EVENT HANDLERS ============================================
 
+/* Mouse Event: mouseDoubleClickEvent(...)
+ * ---------------------------------------
+ * Show dialog box and process input
+ */
 void CircuitElement::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
     setupDialog();
 
     int ret = dialogBox->exec();
-    if (ret == QDialog::Rejected) return; // TODO reset dialog
+    if (ret == QDialog::Rejected) return;
 
     processDialogInput();
 
     QGraphicsItem::mouseDoubleClickEvent(event);
 }
 
+/* Hover Event: hoverEnterEvent(...)
+ * ---------------------------------
+ * Show associated nodes
+ */
 void CircuitElement::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
     if(!(nodeOne && nodeTwo)) return;
@@ -201,6 +181,12 @@ void CircuitElement::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
     QGraphicsItem::hoverEnterEvent(event);
 }
 
+/* Hover Event: hoverMoveEvent(...)
+ * --------------------------------------------------------
+ * Show associated nodes. This function must be implemented
+ * in order for nodes to remain shown if mouse hovers from node
+ * to element without exiting element boundingRect.
+ */
 void CircuitElement::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
 {
     if(!(nodeOne && nodeTwo)) return;
@@ -209,7 +195,10 @@ void CircuitElement::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
     QGraphicsItem::hoverMoveEvent(event);
 }
 
-
+/* Hover Event: hoverLeaveEvent(...)
+ * ---------------------------------
+ * Hide associated nodes
+ */
 void CircuitElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
     if(!(nodeOne && nodeTwo)) return;
@@ -218,6 +207,10 @@ void CircuitElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
     QGraphicsItem::hoverLeaveEvent(event);
 }
 
+/* Focus Event: focusInEvent(...)
+ * ------------------------------
+ * Display selected image
+ */
 void CircuitElement::focusInEvent(QFocusEvent *event)
 {
     display = selected;
@@ -225,6 +218,10 @@ void CircuitElement::focusInEvent(QFocusEvent *event)
     QGraphicsItem::focusInEvent(event);
 }
 
+/* Focus Event: focusOutEvent(...)
+ * -------------------------------
+ * Display normal image
+ */
 void CircuitElement::focusOutEvent(QFocusEvent *event)
 {
     display = normal;

@@ -4,12 +4,7 @@
 #include "schematic.h"
 #include "elementselector.h"
 
-#include <QApplication>
-#include <QMainWindow>
-#include <QPushButton>
-#include <QLabel>
-#include <QVector>
-#include <QMouseEvent>
+#include <QtWidgets>
 
 class MainWindow : public QMainWindow
 {

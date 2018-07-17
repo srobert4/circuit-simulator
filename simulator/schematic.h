@@ -4,9 +4,7 @@
 #include <QtWidgets>
 
 #include "circuitelement.h"
-#include "symbol.h"
 #include "node.h"
-#include "wire.h"
 
 class Schematic : public QGraphicsScene
 {
@@ -30,32 +28,25 @@ signals:
 
 private:
     Mode mode;
-
-    // Track components
-    QMap<int, CircuitElement*> elements;
-    QMap<int, Wire*> wires;
-    int elemId, nodeId, wireId;
+    const int gridSize = 20;
+    const int elementWidth = 160;
 
     // Displaying elements
-    const int elementWidth = 160;
-    void addElement();
-    QGraphicsPixmapItem *curShadow;
-    int lastClickX, lastClickY;
+    QGraphicsPixmapItem *curShadow;   
     QPixmap image;
     QPixmap selectedImage;
     QPixmap shadowImage;
 
     // Track mouse
     QPointF curPos;
+    int lastClickX, lastClickY;
 
     // Drawing wires
     Node *startNode;
     Node *activeNode;
 
-    const int gridSize = 20;
-
-
     // Drawing functions
+    void addElement();
     void startDrawingWire();
     void stopDrawingWire(Node *endNode);
     void addWire(Node *endNode);
