@@ -58,14 +58,12 @@ void Schematic::addElement() {
     CircuitElement *elem = new CircuitElement(id, node1Id, node2Id, image, selectedImage);
     elem->setPos(gridPos(lastClickX, lastClickY));
 
-    Node *nodeOne = new Node(elem);
-    Node *nodeTwo = new Node(elem);
+    Node *nodeOne = new Node(elem, elem);
+    Node *nodeTwo = new Node(elem, elem);
     nodeOne->setPos(QPointF(-elem->width() / 2, 0));
     nodeTwo->setPos(QPointF(elem->width() / 2, 0));
 
     elem->setNodes(nodeOne, nodeTwo);
-    nodeOne->setParentItem(elem);
-    nodeTwo->setParentItem(elem);
 
     addItem(elem);
     setFocusItem(elem);
@@ -94,7 +92,6 @@ void Schematic::stopDrawingWire(Node *endNode)
 {
     if (endNode != nullptr) {
         startNode->connectNode(endNode);
-        removeItem(activeNode);
         delete activeNode;
     }
     startNode = NULL;
@@ -234,11 +231,12 @@ void Schematic::keyReleaseEvent(QKeyEvent *event)
     switch(event->key())
     {
     case  Qt::Key_Delete:
-        for (auto it : selectedItems())
-            removeItem(it);
+        for (auto it : selectedItems()) {
+            delete it;
+        }
         break;
 
-    case Qt::Key_Escape:
+    case Qt::Key_Escape: // TODO check mode
         for (auto it : selectedItems())
             it->setSelected(false);
         break;

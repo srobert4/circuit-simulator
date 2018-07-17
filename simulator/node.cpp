@@ -10,8 +10,11 @@ Node::Node(SchematicItem *element, QGraphicsItem *parent) :
     SchematicItem(-1, "node", parent)
 {
     setAcceptHoverEvents(true);
+    setFlag(ItemIsSelectable);
+    setFlag(ItemIsFocusable);
     setFlag(ItemSendsScenePositionChanges);
     if (!element) setFlag(ItemIsMovable);
+
     this->element = element;
     line = QColor(Qt::black);
     fill = QColor(Qt::gray);
@@ -55,10 +58,12 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawEllipse(QPointF(0,0), rad, rad);
     // draw wires
     for (Connection c : xNodes) {
+        c.line->setPen(wire);
         c.line->setLine(0, 0, mapFromScene(c.node->scenePos()).x(), 0);
     }
 
     for (Connection c : yNodes) {
+        c.line->setPen(wire);
         c.line->setLine(0, 0, 0, mapFromScene(c.node->scenePos()).y());
     }
 }
@@ -69,11 +74,13 @@ void Node::connectNode(Node *node)
     cnx.node = node;
     cnx.line = new QGraphicsLineItem(0, 0, 0, 0, this);
     cnx.line->setPen(wire);
+    cnx.line->setFlag(ItemStacksBehindParent);
 
     Connection thisCnx;
     thisCnx.node = this;
     thisCnx.line = new QGraphicsLineItem(0, 0, 0, 0, node);
     thisCnx.line->setPen(wire);
+    thisCnx.line->setFlag(ItemStacksBehindParent);
 
     qreal midpt = scene()->width() / 2;
     if (this->x() > midpt) {
@@ -109,21 +116,12 @@ void Node::removeYNode(Connection c)
     yNodes.removeOne(cnx);
 }
 
-void Node::connectToElement(SchematicItem *element)
-{
-    this->element = element;
-    setFlag(ItemIsMovable, false);
-    hideNode();
-}
-
-
 /* Public Function: hideNode()
  * ----------------------------
  * Set node invisible
  */
 void Node::hideNode()
 {
-    return;
     line.setAlpha(0);
     fill.setAlpha(0);
     update();
@@ -171,4 +169,22 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     }
     update();
     return QGraphicsItem::itemChange(change, value);
+}
+
+void Node::focusInEvent(QFocusEvent *event)
+{
+    wire.setColor(Qt::red);
+    line = QColor(Qt::red);
+    showNode();
+    update();
+    QGraphicsItem::focusInEvent(event);
+}
+
+void Node::focusOutEvent(QFocusEvent *event)
+{
+    wire.setColor(Qt::black);
+    line = QColor(Qt::black);
+    hideNode();
+    update();
+    QGraphicsItem::focusOutEvent(event);
 }

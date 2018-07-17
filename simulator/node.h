@@ -31,10 +31,9 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 
     void connectNode(Node *node);
-    void connectToElement(SchematicItem *element);
 
-    void addXNode(Node::Connection c) {xNodes.append(c);}
-    void addYNode(Node::Connection c) {yNodes.append(c);}
+    void addXNode(Node::Connection c) { xNodes.append(c); }
+    void addYNode(Node::Connection c) { yNodes.append(c); }
 
     void removeXNode(Node::Connection c);
     void removeYNode(Node::Connection c);
@@ -47,6 +46,8 @@ protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    void focusInEvent(QFocusEvent *event);
+    void focusOutEvent(QFocusEvent *event);
 
 private:
     const int rad = 5;
