@@ -21,6 +21,10 @@ public:
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 
+    int width() { return _width; }
+    int height() { return _height; }
+
+    void setNodes(Node *nodeOne, Node *nodeTwo);
     Node *getNodeOne() { return nodeOne; }
     Node *getNodeTwo() { return nodeTwo; }
     void setNodeIds(int nodeOne, int nodeTwo);
@@ -30,6 +34,7 @@ protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *event);
     void focusInEvent(QFocusEvent *event);
     void focusOutEvent(QFocusEvent *event);
 
@@ -38,7 +43,7 @@ private:
     int nodeOneId, nodeTwoId;
 
     // GraphicsItems
-    int width, height;
+    int _width, _height;
     QPixmap display, normal, selected;
     QGraphicsSimpleTextItem *label;
     Node *nodeOne;

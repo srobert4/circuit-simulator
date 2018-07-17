@@ -20,8 +20,8 @@ CircuitElement::CircuitElement(// width/height of image
 
     // Create symbol
     normal = image;
-    this->width = normal.width();
-    this->height = normal.height();
+    this->_width = normal.width();
+    this->_height = normal.height();
 
     selected = selectedImage;
     display = selected; // icon is selected when placed
@@ -38,8 +38,6 @@ CircuitElement::CircuitElement(// width/height of image
     // Add Nodes
     this->nodeOneId = nodeOneID;
     this->nodeTwoId = nodeTwoID;
-    nodeOne = new Node(nodeOneId, id, this);
-    nodeTwo = new Node(nodeTwoId, id, this);
 
     // Label doesn't inherit SchematicItem so set data ourselves
     label = new QGraphicsSimpleTextItem(name + "\n" + value + units, this);
@@ -47,8 +45,6 @@ CircuitElement::CircuitElement(// width/height of image
     label->setData(IDKey, id);
 
     // Set children positions using child->setPos(pos relative to symbol)
-    nodeOne->setPos(-image.width() / 2, 0);
-    nodeTwo->setPos(image.width() / 2, 0);
     label->setPos(-label->boundingRect().width() / 2, image.height() / 2);
 }
 
@@ -61,8 +57,8 @@ CircuitElement::CircuitElement(// width/height of image
  */
 QRectF CircuitElement::boundingRect() const
 {
-    QRegion imageRect = QRegion(-width / 2, -height / 2, width, height);
-    QRegion labelRect = QRegion(-label->boundingRect().width() / 2, height / 2, label->boundingRect().width(), label->boundingRect().height());
+    QRegion imageRect = QRegion(-_width / 2, -_height / 2, _width, _height);
+    QRegion labelRect = QRegion(-label->boundingRect().width() / 2, _height / 2, label->boundingRect().width(), label->boundingRect().height());
     QRegion totalRect = imageRect + labelRect;
     return totalRect.boundingRect();
 }
@@ -77,7 +73,7 @@ void CircuitElement::paint(QPainter *painter,
     Q_UNUSED(option);
     Q_UNUSED(widget);
     display = (isSelected() ? selected : normal);
-    painter->drawPixmap(-width/2, -height/2, display);
+    painter->drawPixmap(-_width/2, -_height/2, display);
 }
 
 /* Public Function: setNodeIds(int, int)
@@ -99,6 +95,12 @@ void CircuitElement::getNodeIds(int &nodeOne, int &nodeTwo)
 {
     nodeOne = this->nodeOneId;
     nodeTwo = this->nodeTwoId;
+}
+
+void CircuitElement::setNodes(Node *nodeOne, Node *nodeTwo)
+{
+    this->nodeOne = nodeOne;
+    this->nodeTwo = nodeTwo;
 }
 
 // ----------- PRIVATE FUNCTIONS --------------------------
@@ -193,13 +195,24 @@ void CircuitElement::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 
 void CircuitElement::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
+    if(!(nodeOne && nodeTwo)) return;
     nodeOne->showNode();
     nodeTwo->showNode();
     QGraphicsItem::hoverEnterEvent(event);
 }
 
+void CircuitElement::hoverMoveEvent(QGraphicsSceneHoverEvent *event)
+{
+    if(!(nodeOne && nodeTwo)) return;
+    nodeOne->showNode();
+    nodeTwo->showNode();
+    QGraphicsItem::hoverMoveEvent(event);
+}
+
+
 void CircuitElement::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
+    if(!(nodeOne && nodeTwo)) return;
     nodeOne->hideNode();
     nodeTwo->hideNode();
     QGraphicsItem::hoverLeaveEvent(event);

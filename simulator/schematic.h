@@ -49,9 +49,8 @@ private:
     QPointF curPos;
 
     // Drawing wires
-    QGraphicsLineItem *curWire;
+    Node *startNode;
     Node *activeNode;
-    QPointF startPos;
 
     const int gridSize = 20;
 

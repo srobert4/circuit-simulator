@@ -8,20 +8,36 @@ class Node : public SchematicItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
+
+    struct Connection
+    {
+        Node *node;
+        QGraphicsLineItem *line;
+
+        bool operator ==(const Connection &c1) {
+            return node == c1.node;
+        }
+    };
+
 public:
     explicit Node(
-        int id,
-        int elemId,
-        QGraphicsItem *parent = nullptr
-    );
+            SchematicItem *element = nullptr,
+            QGraphicsItem *parent = nullptr
+            );
+    ~Node();
 
     // required functions
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 
-    // getters and setters
-    void setElemId(int elem) { elemId = elem; }
-    void addWire(int wire) { wires.append(wire); }
+    void connectNode(Node *node);
+    void connectToElement(SchematicItem *element);
+
+    void addXNode(Node::Connection c) {xNodes.append(c);}
+    void addYNode(Node::Connection c) {yNodes.append(c);}
+
+    void removeXNode(Node::Connection c);
+    void removeYNode(Node::Connection c);
 
     // display functions
     void showNode();
@@ -30,13 +46,15 @@ public:
 protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
 private:
-    int rad;
-    int elemId; // track self and associated element
-    QVector<int> wires; // track wires beginning or ending at this node
+    const int rad = 5;
+    QVector<Node::Connection> xNodes, yNodes; // we draw X for xNodes and Y for yNodes
     QColor line;
     QColor fill;
+    QPen wire;
+    SchematicItem *element;
 
 };
 

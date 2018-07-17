@@ -15,7 +15,6 @@ Schematic::Schematic(QObject *parent)
     wireId = 0;
 
     curShadow = NULL;
-    curWire = NULL;
 
     mode = Schematic::Edit;
 }
@@ -58,6 +57,16 @@ void Schematic::addElement() {
     int node2Id = nodeId++;
     CircuitElement *elem = new CircuitElement(id, node1Id, node2Id, image, selectedImage);
     elem->setPos(gridPos(lastClickX, lastClickY));
+
+    Node *nodeOne = new Node(elem);
+    Node *nodeTwo = new Node(elem);
+    nodeOne->setPos(QPointF(-elem->width() / 2, 0));
+    nodeTwo->setPos(QPointF(elem->width() / 2, 0));
+
+    elem->setNodes(nodeOne, nodeTwo);
+    nodeOne->setParentItem(elem);
+    nodeTwo->setParentItem(elem);
+
     addItem(elem);
     setFocusItem(elem);
     elements[id] = elem;
@@ -70,12 +79,10 @@ void Schematic::addElement() {
  */
 void Schematic::startDrawingWire()
 {
-    curWire = new QGraphicsLineItem(0, 0, 0, 0);
-    curWire->setPos(startPos);
-    QPen pen = QPen(Qt::black);
-    pen.setWidth(2);
-    curWire->setPen(pen);
-    addItem(curWire);
+    activeNode = new Node();
+    activeNode->setPos(startNode->scenePos());
+    startNode->connectNode(activeNode);
+    addItem(activeNode);
 }
 
 /* Private Function: stopDrawingWire(QPoint, int)
@@ -85,36 +92,13 @@ void Schematic::startDrawingWire()
  */
 void Schematic::stopDrawingWire(Node *endNode)
 {
-    addWire(endNode);
-    curWire = NULL;
-    activeNode = NULL;
-}
-
-/* Private Function: addWire(QPoint, int)
- * --------------------------------------
- * Create a new wire. Gets start point from
- * startPos instance variable and end point
- * from argument. Gets start node from instance
- * variable activeNode and end node from argument.
- */
-void Schematic::addWire(Node *endNode)
-{
-    if (endNode == NULL) {
-        qInfo() << "creating a new node";
-        endNode = new Node(nodeId, -1, curWire);
-        endNode->setPos(curWire->line().x2(), curWire->line().y2());
+    if (endNode != nullptr) {
+        startNode->connectNode(endNode);
+        removeItem(activeNode);
+        delete activeNode;
     }
-
-    Wire *wire = new Wire(curWire,
-                          activeNode,
-                          endNode,
-                          wireId,
-                          activeNode);
-
-    activeNode->addWire(wireId);
-    endNode->addWire(wireId);
-    wires[wireId++] = wire;
-    removeItem(curWire);
+    startNode = NULL;
+    activeNode = NULL;
 }
 
 QPointF Schematic::gridPos(QPointF point)
@@ -142,7 +126,7 @@ QPointF Schematic::gridPos(qreal x, qreal y)
  */
 void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    SchematicItem *item = NULL;
+    SchematicItem *item = nullptr;
     switch( mode )
     {
     case Schematic::Build:
@@ -159,15 +143,10 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     case Schematic::Draw:
         for (auto it : items(event->scenePos())) {
             SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
-            if (schemIt->getType() == "node"){
-                curWire->setLine(0, 0, it->scenePos().x() - startPos.x(), it->scenePos().y() - startPos.y());
+            if (schemIt != activeNode && schemIt->getType() == "node"){
                 item = schemIt;
                 break;
             }
-        }
-        if (item == 0) {
-            QPointF endPos = gridPos(event->scenePos());
-            curWire->setLine(0, 0, endPos.x() - startPos.x(), endPos.y() - startPos.y());
         }
         stopDrawingWire(qgraphicsitem_cast<Node *>(item));
         mode = Schematic::Edit;
@@ -178,8 +157,7 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         if (!item) break;
 
         if (item->getType() == "node") {
-           startPos = item->scenePos();
-           activeNode = qgraphicsitem_cast<Node *>(item);
+           startNode = qgraphicsitem_cast<Node *>(item);
            startDrawingWire();
            mode = Schematic::Draw;
         } else if (item->getType() == "element") {
@@ -213,7 +191,7 @@ void Schematic::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         curShadow->setPos(curPos);
         break;
     case Schematic::Draw:
-        curWire->setLine(0, 0, curPos.x() - startPos.x(), curPos.y() - startPos.y());
+        activeNode->setPos(curPos);
         break;
     case Schematic::Edit:
         break;

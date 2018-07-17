@@ -4,46 +4,25 @@
 #include <QtWidgets>
 #include "node.h"
 
-class Wire : SchematicItem
+class Wire : public SchematicItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
 public:
-    explicit Wire(QGraphicsLineItem *line, Node *startNode, Node *endNode, int id, QGraphicsItem *parent = nullptr) :
-        SchematicItem(id, "wire", parent)
-    {
-        setFlag(ItemIsFocusable);
-        setFlag(ItemIsSelectable);
-        this->line = line->line();
-        this->startNode = startNode;
-        this->endNode = endNode;
-    }
+    explicit Wire(QGraphicsLineItem *line, Node *startNode, Node *endNode, int id, QGraphicsItem *parent = nullptr);
 
     // required functions
-    QRectF boundingRect() const { return QRectF(line.p1(), line.p2()); }
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
-    {
-        Q_UNUSED(option);
-        Q_UNUSED(widget);
-        painter->setPen(Qt::black);
-        if (isSelected())
-            painter->setPen(Qt::red);
+    QRectF boundingRect() const { return this->rect; }
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
-        painter->drawLine(this->line);
-    }
-
-    void setLine(QGraphicsLineItem *line) { this->line = line->line(); }
+    void setLine(QGraphicsLineItem *line);
+    QLineF *getLine() { return &line; }
 
 protected:
-    void focusInEvent(QFocusEvent *event) {
-        qInfo() << "wire focused";
-        QGraphicsItem::focusInEvent(event);
-    }
-    void focusOutEvent(QFocusEvent *event) {
-        QGraphicsItem::focusInEvent(event);
-    }
+//    virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 
 private:
+    QRectF rect;
     QLineF line;
     int id;
     Node *startNode;
