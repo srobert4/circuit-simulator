@@ -29,7 +29,10 @@ SOURCES += \
     schematic.cpp \
     circuitelement.cpp \
     elementselector.cpp \
-    node.cpp
+    node.cpp \
+    netlist.cpp \
+    boundarycondition.cpp \
+    simulationoptionsdialog.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -37,4 +40,7 @@ HEADERS += \
     circuitelement.h \
     elementselector.h \
     node.h \
-    schematicitem.h
+    schematicitem.h \
+    netlist.h \
+    boundarycondition.h \
+    simulationoptionsdialog.h

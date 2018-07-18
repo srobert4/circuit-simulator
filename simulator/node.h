@@ -42,6 +42,13 @@ public:
     // display functions
     void showNode();
     void hideNode();
+    void displayID(int id);
+
+    QSet<Node *> getConnectedElementNodes();
+    int numConnections() { return xNodes.size() + yNodes.size(); }
+    bool hasElement() { return (element != nullptr); }
+    SchematicItem *getElement() { return element; }
+    SchematicItem *element;
 
 protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
@@ -57,7 +64,10 @@ private:
     QColor line;
     QColor fill;
     QPen wire;
-    SchematicItem *element;
+
+    QGraphicsSimpleTextItem *label = nullptr;
+
+    void getConnectedNodes(Node *node, QSet<Node *> *nodes, QSet<Node *> *seen);
 
 };
 

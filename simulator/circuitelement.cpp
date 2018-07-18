@@ -7,7 +7,7 @@
 CircuitElement::CircuitElement(
         const ElementProperties properties,
         QGraphicsItem *parent
-) : SchematicItem("element", parent)
+) : SchematicItem("element", parent, properties.subtype)
 {
     setFlag(ItemIsSelectable, true);
     setFlag(ItemIsFocusable, true);
@@ -84,6 +84,13 @@ void CircuitElement::setNodes(Node *nodeOne, Node *nodeTwo)
     this->nodeTwo = nodeTwo;
 }
 
+Node *CircuitElement::getOtherNode(Node *node)
+{
+    if (node == nodeOne) return nodeTwo;
+    if (node == nodeTwo) return nodeOne;
+    return nullptr;
+}
+
 // ========= PRIVATE FUNCTIONS =========================
 
 /* Private Function: createDialogBox()
@@ -150,7 +157,7 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
                 [=](){ valueFileLineEdit->setText( QFileDialog::getOpenFileName(
                                                         extValueExt,
                                                         "Choose input file",
-                                                        "/home",
+                                                        "/home/srobertson",
                                                         "All files (*.*)") ); });
 
         extValueLayout->addWidget(browserLabel);
@@ -169,6 +176,10 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
         connect(externalButton, &QRadioButton::toggled, constValueExt, &QWidget::setHidden);
         connect(externalButton, &QRadioButton::toggled, extValueExt, &QWidget::setVisible);
     } else {
+        constValueExt = nullptr;
+        extValueExt = nullptr;
+        valueFileLineEdit = nullptr;
+
         layout->addWidget(valueLineEdit, 1, 2, 1, 2);
         layout->addWidget(unitsComboBox, 1, 4);
         layout->addWidget(unitsLabel, 1, 5);
@@ -179,9 +190,9 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
 
     dialog->setLayout(layout);
 
-    QApplication::connect(cancelButton, SIGNAL(clicked(bool)),
+   connect(cancelButton, SIGNAL(clicked(bool)),
             dialog, SLOT(reject()));
-    QApplication::connect(doneButton, SIGNAL(clicked(bool)),
+    connect(doneButton, SIGNAL(clicked(bool)),
             dialog, SLOT(accept()));
 
     return dialog;
@@ -212,9 +223,10 @@ void CircuitElement::processDialogInput()
     name = nameLineEdit->text();
     value = valueLineEdit->text();
     unitMod = unitsComboBox->currentText();
-    if (valueFileLineEdit->text() != "") {
+    if (valueFileLineEdit && valueFileLineEdit->text() != "") {
         value = "External";
         label->setText(prefix + name + "\n" + value);
+        externalFile = valueFileLineEdit->text();
     } else {
         label->setText(prefix + name + "\n" + value + unitMod + units);
     }

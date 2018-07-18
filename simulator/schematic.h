@@ -5,6 +5,8 @@
 
 #include "circuitelement.h"
 #include "node.h"
+#include "netlist.h"
+#include "simulationoptionsdialog.h"
 
 class Schematic : public QGraphicsScene
 {
@@ -18,6 +20,7 @@ public:
     void setMode(Mode mode) { this->mode = mode; }
     void setElementProperties(CircuitElement::ElementProperties &properties,
                               QString &shadowPath);
+    void simulate();
 
 protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
@@ -44,6 +47,17 @@ private:
     // Drawing wires
     Node *startNode;
     Node *activeNode;
+
+    // Netlist
+    Netlist *netlist;
+    QString netlistFilename;
+    SimulationOptionsDialog *simulationOptions;
+
+    // Parsing
+    void parse();
+    void parseFrom(Node *startNode, int &curNodeID);
+    bool grounded(Node *node);
+    int showSimulationOptions();
 
     // Drawing functions
     void addElement();

@@ -36,6 +36,8 @@ Node::~Node()
         c.node->removeYNode(thisC);
     for (Connection c : yNodes)
         c.node->removeXNode(thisC);
+
+    if(label) delete label;
 }
 
 // ========= PUBLIC FUNCTIONS ============================
@@ -111,6 +113,31 @@ void Node::connectNode(Node *node)
             this->addYNode(cnx);
             node->addXNode(thisCnx);
         }
+    }
+}
+
+void Node::displayID(int id)
+{
+    label = new QGraphicsSimpleTextItem(QString::number(id), this);
+    label->setPos(1, -label->boundingRect().height() - 5);
+}
+
+QSet<Node *> Node::getConnectedElementNodes()
+{
+    QSet<Node *> nodes;
+    QSet<Node *> seen;
+    getConnectedNodes(this, &nodes, &seen);
+    nodes.remove(this);
+    return nodes;
+}
+
+void Node::getConnectedNodes(Node *node, QSet<Node *> *nodes, QSet<Node *> *seen)
+{
+    if (node->hasElement()) nodes->insert(node);
+    seen->insert(node);
+    for (Connection c : xNodes + yNodes) {
+        if (!seen->contains(c.node))
+            getConnectedNodes(c.node, nodes, seen);
     }
 }
 

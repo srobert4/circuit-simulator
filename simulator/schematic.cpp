@@ -7,7 +7,8 @@
 Schematic::Schematic(QObject *parent)
     : QGraphicsScene(parent)
 {
-    curShadow = NULL;
+    netlist = nullptr;
+    curShadow = nullptr;
     mode = Schematic::Edit;
 }
 
@@ -27,6 +28,30 @@ void Schematic::setElementProperties(CircuitElement::ElementProperties &properti
     elementProperties = properties;
     shadowImage = QPixmap(shadowPath);
     shadowImage = shadowImage.scaledToWidth(properties.image.width());
+}
+
+void Schematic::simulate()
+{
+    // Construct netlist
+    if (netlist != nullptr) delete netlist;
+    netlist = new Netlist();
+
+    // Parse diagram and add elements
+    parse();
+
+    // Show options dialog box
+    simulationOptions = new SimulationOptionsDialog(netlist);
+    if(simulationOptions->exec() == QDialog::Rejected) return;
+    simulationOptions->processInput();
+
+    // Write netlist to file
+    netlist->writeToFile(simulationOptions->getFilename());
+
+    // Get command and display in dialog box
+//    QString command = netlist->getCommand();
+//    qInfo() << "Run simulation with: " << command;
+    delete simulationOptions;
+    simulationOptions = nullptr;
 }
 
 // ============ PRIVATE FUNCTIONS ================================
@@ -104,6 +129,47 @@ QPointF Schematic::gridPos(qreal x, qreal y)
 QPointF Schematic::gridPos(QPointF point)
 {
     return gridPos(point.x(), point.y());
+}
+
+void Schematic::parse()
+{
+    CircuitElement *start = nullptr;
+    for(auto item : items()) {
+        SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(item);
+        if (schemIt->getSubtype() == "ground") {
+            start = qgraphicsitem_cast<CircuitElement *>(item);
+            break;
+        }
+    }
+    if (start == nullptr) return; // throw error
+
+    int nodeID = 0;
+    Node *startNode = start->getNodeOne();
+    parseFrom(startNode, nodeID);
+}
+
+void Schematic::parseFrom(Node *startNode, int &curNodeID)
+{
+    if (startNode == nullptr) return; // TODO - get angry
+    int startNodeID = curNodeID;
+    for (Node *node : startNode->getConnectedElementNodes()) {
+        CircuitElement *element = qgraphicsitem_cast<CircuitElement *>(node->getElement());
+        if(element->getSubtype() == "ground") continue;
+
+        curNodeID = (grounded(element->getOtherNode(node)) ? 0 : curNodeID + 1);
+        netlist->addElement(element, startNodeID, curNodeID);
+        startNode->displayID(startNodeID);
+        parseFrom(element->getOtherNode(node), curNodeID);
+    }
+}
+
+bool Schematic::grounded(Node *node)
+{
+    for (Node *n : node->getConnectedElementNodes()) {
+        CircuitElement *element = qgraphicsitem_cast<CircuitElement *>(n->getElement());
+        if (element->getSubtype() == "ground") return true;
+    }
+    return false;
 }
 
 // ============= EVENT HANDLERS ================================

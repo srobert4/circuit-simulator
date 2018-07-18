@@ -64,6 +64,7 @@ void ElementSelector::addButton(const QString &buttonLabel,
     elementProperties.hasLabel = hasLabel;
     elementProperties.allowsExternalInput = allowsExternalInput;
 
+    elementProperties.subtype = buttonLabel.toLower();
     elementProperties.prefix = prefix;
     elementProperties.units = units;
 

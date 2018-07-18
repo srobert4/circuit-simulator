@@ -18,6 +18,7 @@ public:
         QPixmap selected;
         bool hasLabel;
         bool allowsExternalInput;
+        QString subtype;
         QString prefix;
         QString units;
         qreal widthRatio;
@@ -37,6 +38,12 @@ public:
     void setNodes(Node *nodeOne, Node *nodeTwo);
     Node *getNodeOne() { return nodeOne; }
     Node *getNodeTwo() { return nodeTwo; }
+    Node *getOtherNode(Node *node);
+
+    // for adding to a netlist
+    QString getName() { return prefix + name; }
+    QString getValue() { return value + unitMod; }
+    QString getExternalFile() { return externalFile; }
 
 protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
@@ -60,6 +67,7 @@ private:
     QString value;
     QString unitMod;
     QString units;
+    QString externalFile;
 
     // Dialog box
     QDialog *dialogBox;

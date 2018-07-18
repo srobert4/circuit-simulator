@@ -57,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
     QWidget *simulator = new QWidget();
     QPushButton *simulateButton = new QPushButton("Run Simulation");
     simulateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    connect(simulateButton, &QPushButton::clicked, schem, &Schematic::clear); // TODO: connect to right function here
+    connect(simulateButton, &QPushButton::clicked, schem, &Schematic::simulate); // TODO: connect to right function here
     QHBoxLayout *simLayout = new QHBoxLayout;
     simLayout->addWidget(simulateButton);
     simulator->setLayout(simLayout);
