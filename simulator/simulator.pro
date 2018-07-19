@@ -44,3 +44,6 @@ HEADERS += \
     netlist.h \
     boundarycondition.h \
     simulationoptionsdialog.h
+
+RESOURCES += \
+    images.qrc

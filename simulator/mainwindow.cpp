@@ -23,34 +23,34 @@ MainWindow::MainWindow(QWidget *parent)
     const QChar Ohms(0x03A9);
     units.setUnicode(&Ohms, 1);
     selector->addButton("Resistor",
-                        "/home/srobertson/Downloads/resistor.png",
-                        "/home/srobertson/Downloads/resistorSelected.png",
-                        "/home/srobertson/Downloads/resistorShadow.png",
+                        ":/rcs/images/resistor.png",
+                        ":/rcs/images/resistorSelected.png",
+                        ":/rcs/images/resistorShadow.png",
                         true, false, "R", units, 1);
     selector->addButton("Capacitor",
-                        "/home/srobertson/Downloads/capacitor.png",
-                        "/home/srobertson/Downloads/capacitorSelected.png",
-                        "/home/srobertson/Downloads/capacitorShadow.png",
+                        ":/rcs/images/capacitor.png",
+                        ":/rcs/images/capacitorSelected.png",
+                        ":/rcs/images/capacitorShadow.png",
                         true, false, "C", "F", 1);
     selector->addButton("Inductor",
-                        "/home/srobertson/Downloads/inductor.png",
-                        "/home/srobertson/Downloads/inductorSelected.png",
-                        "/home/srobertson/Downloads/inductorShadow.png",
+                        ":/rcs/images/inductor.png",
+                        ":/rcs/images/inductorSelected.png",
+                        ":/rcs/images/inductorShadow.png",
                         true, false, "L", "H", 1);
     selector->addButton("Ground",
-                        "/home/srobertson/Downloads/ground.png",
-                        "/home/srobertson/Downloads/groundSelected.png",
-                        "/home/srobertson/Downloads/groundShadow.png",
+                        ":/rcs/images/ground.png",
+                        ":/rcs/images/groundSelected.png",
+                        ":/rcs/images/groundShadow.png",
                         false, false, "", "", 0.5);
     selector->addButton("Pressure",
-                        "/home/srobertson/Downloads/voltageSource.png",
-                        "/home/srobertson/Downloads/voltageSourceSelected.png",
-                        "/home/srobertson/Downloads/voltageSourceShadow.png",
+                        ":/rcs/images/voltageSource.png",
+                        ":/rcs/images/voltageSourceSelected.png",
+                        ":/rcs/images/voltageSourceShadow.png",
                         true, true, "V", "V", 1);
     selector->addButton("Flow",
-                        "/home/srobertson/Downloads/currentSource.png",
-                        "/home/srobertson/Downloads/currentSourceSelected.png",
-                        "/home/srobertson/Downloads/currentSourceShadow.png",
+                        ":/rcs/images/currentSource.png",
+                        ":/rcs/images/currentSourceSelected.png",
+                        ":/rcs/images/currentSourceShadow.png",
                         true, true, "Q", "A", 1);
 
 
