@@ -1,0 +1,6 @@
+mymodel
+C1 0 1 10
+R1 1 0 10m
+.ic v(1)=90
+.tran 0.01ms 5s
+.end

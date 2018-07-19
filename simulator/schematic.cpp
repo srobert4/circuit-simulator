@@ -46,6 +46,7 @@ void Schematic::simulate()
 
     // Write netlist to file
     netlist->writeToFile(simulationOptions->getFilename());
+    qInfo() << "Written to file: " << simulationOptions->getFilename();
 
     // Get command and display in dialog box
 //    QString command = netlist->getCommand();
@@ -307,6 +308,14 @@ void Schematic::keyReleaseEvent(QKeyEvent *event)
     switch(event->key())
     {
     case  Qt::Key_Delete:
+        for (auto it : selectedItems()) {
+            SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
+            if (schemIt->getType() != "")
+                delete it;
+        }
+        break;
+
+    case Qt::Key_Backspace:
         for (auto it : selectedItems()) {
             SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
             if (schemIt->getType() != "")
