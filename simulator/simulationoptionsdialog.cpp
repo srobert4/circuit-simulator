@@ -4,32 +4,32 @@ SimulationOptionsDialog::SimulationOptionsDialog(Netlist *netlist, QWidget *pare
 {
     this->netlist = netlist;
 
-    QLabel *nameLabel = new QLabel("Model name: ");
-    nameLineEdit = new QLineEdit;
+    QLabel *nameLabel = new QLabel("Model name: ", this);
+    nameLineEdit = new QLineEdit(this);
 
-    QLabel *filenameLabel = new QLabel("Save circuit as: ");
-    filenameLineEdit = new QLineEdit;
-    QLabel *filenameExtLabel = new QLabel(".cir");
+    QLabel *filenameLabel = new QLabel("Save circuit as: ", this);
+    filenameLineEdit = new QLineEdit(this);
+    QLabel *filenameExtLabel = new QLabel(".cir", this);
 
-    QLabel *simTypeLabel = new QLabel("Simulation type: ");
-    simulationTypeComboBox = new QComboBox;
+    QLabel *simTypeLabel = new QLabel("Simulation type: ", this);
+    simulationTypeComboBox = new QComboBox(this);
     simulationTypeComboBox->addItems(simulationTypes);
 
-    nodesToGraph = new QButtonGroup;
+    nodesToGraph = new QButtonGroup(this);
     nodesToGraph->setExclusive(false);
-    elementsToGraph = new QButtonGroup;
+    elementsToGraph = new QButtonGroup(this);
     elementsToGraph->setExclusive(false);
     for (QString node : netlist->getNodeNames()) {
-        nodesToGraph->addButton(new QCheckBox(node));
-        initialConditionLineEdits.append(new QLineEdit());
-        initialConditionLabels.append(new QLabel("v(" + node + ")"));
+        nodesToGraph->addButton(new QCheckBox(node, this));
+        initialConditionLineEdits.append(new QLineEdit(this));
+        initialConditionLabels.append(new QLabel("v(" + node + ")", this));
     }
 
     for (QString element : netlist->getElementNames()) {
-        elementsToGraph->addButton(new QCheckBox(element));
+        elementsToGraph->addButton(new QCheckBox(element, this));
     }
 
-    QGridLayout *topLayout = new QGridLayout;
+    QGridLayout *topLayout = new QGridLayout();
     topLayout->addWidget(nameLabel, 0, 0);
     topLayout->addWidget(nameLineEdit, 0, 1, 1, 2);
 
@@ -40,9 +40,9 @@ SimulationOptionsDialog::SimulationOptionsDialog(Netlist *netlist, QWidget *pare
     topLayout->addWidget(simTypeLabel, 2, 0);
     topLayout->addWidget(simulationTypeComboBox, 2, 1, 1, 2);
 
-    QLabel *nodesLabel = new QLabel("Nodes:");
-    QLabel *elementLabel = new QLabel("Elements:");
-    QGridLayout *bottomLayout = new QGridLayout;
+    QLabel *nodesLabel = new QLabel("Nodes:", this);
+    QLabel *elementLabel = new QLabel("Elements:", this);
+    QGridLayout *bottomLayout = new QGridLayout();
 
     bottomLayout->addWidget(nodesLabel, 0, 0, 1, 3);
     bottomLayout->addWidget(elementLabel, 0, 3);
@@ -67,13 +67,13 @@ SimulationOptionsDialog::SimulationOptionsDialog(Netlist *netlist, QWidget *pare
         row++;
     }
 
-    QPushButton *cancelButton = new QPushButton("Cancel");
-    QPushButton *doneButton  = new QPushButton("Run");
+    QPushButton *cancelButton = new QPushButton("Cancel", this);
+    QPushButton *doneButton  = new QPushButton("Run", this);
     doneButton->setDefault(true);
     bottomLayout->addWidget(cancelButton, row, 2);
     bottomLayout->addWidget(doneButton, row, 3);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout;
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(topLayout);
     mainLayout->addLayout(bottomLayout);
     setLayout(mainLayout);

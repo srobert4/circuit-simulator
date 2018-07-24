@@ -12,6 +12,8 @@ class CircuitElement : public SchematicItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
+    enum { Type = UserType + 2 };
+    int type() const override { return Type; }
     struct ElementProperties
     {
         QPixmap image;
@@ -28,9 +30,10 @@ public:
         const CircuitElement::ElementProperties properties,
         QGraphicsItem *parent = nullptr
     );
+    ~CircuitElement() override;
 
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+    QRectF boundingRect() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
 
     int width() { return _width; }
     int height() { return _height; }
@@ -46,12 +49,12 @@ public:
     QString getExternalFile() { return externalFile; }
 
 protected:
-    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
-    void hoverMoveEvent(QGraphicsSceneHoverEvent *event);
-    void focusInEvent(QFocusEvent *event);
-    void focusOutEvent(QFocusEvent *event);
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
+    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;
+    void focusInEvent(QFocusEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
 
 private:
     // GraphicsItems

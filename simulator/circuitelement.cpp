@@ -23,6 +23,7 @@ CircuitElement::CircuitElement(
     display = selected; // icon is selected when placed
     setSelected(true);
 
+    dialogBox = nullptr;
     if (!properties.hasLabel) return;
 
     // create Dialog box
@@ -48,6 +49,8 @@ CircuitElement::CircuitElement(
     // Set children positions using child->setPos(pos relative to symbol)
     label->setPos(-label->boundingRect().width() / 2, _height / 2);
 }
+
+CircuitElement::~CircuitElement() { if (dialogBox) delete dialogBox; }
 
 // ========= PUBLIC FUNCTIONS ================================
 
@@ -104,21 +107,21 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
 {
     QDialog *dialog = new QDialog();
 
-    QLabel *nameLabel = new QLabel("Name: ");
-    QLabel *prefixLabel = new QLabel(prefix);
-    nameLineEdit = new QLineEdit;
+    QLabel *nameLabel = new QLabel("Name: ", dialog);
+    QLabel *prefixLabel = new QLabel(prefix, dialog);
+    nameLineEdit = new QLineEdit(dialog);
 
-    QLabel *valueLabel = new QLabel("Value: ");
-    valueLineEdit = new QLineEdit;
-    unitsComboBox = new QComboBox;
+    QLabel *valueLabel = new QLabel("Value: ", dialog);
+    valueLineEdit = new QLineEdit(dialog);
+    unitsComboBox = new QComboBox(dialog);
     unitsComboBox->addItems(unitModifiers);
-    QLabel *unitsLabel = new QLabel(units);
+    QLabel *unitsLabel = new QLabel(units, dialog);
 
-    QPushButton *cancelButton = new QPushButton("Cancel");
-    QPushButton *doneButton  = new QPushButton("Done");
+    QPushButton *cancelButton = new QPushButton("Cancel", dialog);
+    QPushButton *doneButton  = new QPushButton("Done", dialog);
     doneButton->setDefault(true);
 
-    QGridLayout *layout = new QGridLayout;
+    QGridLayout *layout = new QGridLayout(dialog);
 
     layout->addWidget(nameLabel, 0, 0);
     layout->addWidget(prefixLabel, 0, 1, Qt::AlignRight);
@@ -128,9 +131,9 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
 
     if (allowsExternalInput) {
         // --- TOGGLE EXTENSIONS BUTTONS ---
-        QRadioButton *constButton = new QRadioButton("Constant value");
-        QRadioButton *externalButton = new QRadioButton("External value");
-        QButtonGroup *valueTypeButtons = new QButtonGroup;
+        QRadioButton *constButton = new QRadioButton("Constant value", dialog);
+        QRadioButton *externalButton = new QRadioButton("External value", dialog);
+        QButtonGroup *valueTypeButtons = new QButtonGroup(dialog);
         valueTypeButtons->addButton(constButton);
         valueTypeButtons->addButton(externalButton);
         valueTypeButtons->setExclusive(true);
@@ -139,19 +142,19 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
         layout->addWidget(externalButton, 1, 3);
 
         // --- CONST VALUE OPTIONS ---
-        constValueExt = new QWidget;
-        QGridLayout *constValueLayout = new QGridLayout;
+        constValueExt = new QWidget(dialog);
+        QGridLayout *constValueLayout = new QGridLayout(dialog);
         constValueLayout->addWidget(valueLineEdit, 0, 2, 1, 2);
         constValueLayout->addWidget(unitsComboBox, 0, 4);
         constValueLayout->addWidget(unitsLabel, 0, 5);
         constValueExt->setLayout(constValueLayout);
 
         // --- EXTERNAL VALUE OPTIONS ---
-        extValueExt = new QWidget;
-        QLabel *browserLabel = new QLabel("File containing values: ");
-        valueFileLineEdit = new QLineEdit;
-        QPushButton *browseButton = new QPushButton("Browse");
-        QHBoxLayout *extValueLayout = new QHBoxLayout;
+        extValueExt = new QWidget(dialog);
+        QLabel *browserLabel = new QLabel("File containing values: ", dialog);
+        valueFileLineEdit = new QLineEdit(dialog);
+        QPushButton *browseButton = new QPushButton("Browse", dialog);
+        QHBoxLayout *extValueLayout = new QHBoxLayout(dialog);
 
         connect(browseButton, &QPushButton::pressed,
                 [=](){ valueFileLineEdit->setText( QFileDialog::getOpenFileName(

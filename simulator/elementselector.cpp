@@ -21,7 +21,7 @@ ElementSelector::ElementSelector(Schematic *schematic, QWidget *parent
             this, SLOT(slotButtonReleased(int)));
     deselectOnRelease = false;
 
-    layout = new QGridLayout;
+    layout = new QGridLayout(this);
     setLayout(layout);
 }
 
@@ -83,7 +83,7 @@ void ElementSelector::deselectAll()
 {
     buttons->setExclusive(false);
     QAbstractButton *checked = buttons->checkedButton();
-    if (checked == NULL) return;
+    if (checked == nullptr) return;
     checked->setChecked(false);
     buttons->setExclusive(true);
 }

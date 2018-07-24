@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/rcs">
+    <qresource prefix="/">
         <file>images/voltageSourceShadow.png</file>
         <file>images/voltageSourceSelected.png</file>
         <file>images/voltageSource.png</file>
@@ -18,5 +18,8 @@
         <file>images/capacitorShadow.png</file>
         <file>images/capacitorSelected.png</file>
         <file>images/capacitor.png</file>
+        <file>images/startGroundShadow.png</file>
+        <file>images/startGroundSelected.png</file>
+        <file>images/startGround.png</file>
     </qresource>
 </RCC>

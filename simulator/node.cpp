@@ -15,6 +15,7 @@ Node::Node(SchematicItem *element, QGraphicsItem *parent) :
     if (!element) setFlag(ItemIsMovable);
 
     this->element = element;
+    label = nullptr;
     line = QColor(Qt::black);
     fill = QColor(Qt::gray);
     wire = QPen(Qt::black);
@@ -37,7 +38,8 @@ Node::~Node()
     for (Connection c : yNodes)
         c.node->removeXNode(thisC);
 
-    if(label) delete label;
+    for (Node *node : allNodes)
+        node->removeNode(this);
 }
 
 // ========= PUBLIC FUNCTIONS ============================
@@ -59,17 +61,20 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
+
     // draw node
     painter->setPen(line);
     painter->setBrush(fill);
     painter->drawEllipse(QPointF(0,0), rad, rad);
+
     // draw wires
-    for (Connection c : xNodes) {
+    Connection c;
+    foreach(c, xNodes) {
         c.line->setPen(wire);
         c.line->setLine(0, 0, mapFromScene(c.node->scenePos()).x(), 0);
     }
 
-    for (Connection c : yNodes) {
+    foreach(c, yNodes) {
         c.line->setPen(wire);
         c.line->setLine(0, 0, 0, mapFromScene(c.node->scenePos()).y());
     }
@@ -114,31 +119,45 @@ void Node::connectNode(Node *node)
             node->addXNode(thisCnx);
         }
     }
+
+    this->addNodes(node);
+    node->addNodes(this);
+}
+
+/* Public Function: addNodes(Node *)
+ * ---------------------------------
+ * Add all nodes directly connected to
+ * the given node to this node's allNodes
+ * list.
+ */
+void Node::addNodes(Node *node)
+{
+    allNodes.insert(node);
+    allNodes += node->getConnectedNodes();
+    if (allNodes.contains(this)) allNodes.remove(this);
 }
 
 void Node::displayID(int id)
 {
+    if (label) delete label;
     label = new QGraphicsSimpleTextItem(QString::number(id), this);
     label->setPos(1, -label->boundingRect().height() - 5);
 }
 
-QSet<Node *> Node::getConnectedElementNodes()
+void Node::hideID()
 {
-    QSet<Node *> nodes;
-    QSet<Node *> seen;
-    getConnectedNodes(this, &nodes, &seen);
-    nodes.remove(this);
-    return nodes;
+    if (label) delete label;
+    label = nullptr;
 }
 
-void Node::getConnectedNodes(Node *node, QSet<Node *> *nodes, QSet<Node *> *seen)
+QSet<Node *> Node::getConnectedNodes()
 {
-    if (node->hasElement()) nodes->insert(node);
-    seen->insert(node);
-    for (Connection c : xNodes + yNodes) {
-        if (!seen->contains(c.node))
-            getConnectedNodes(c.node, nodes, seen);
-    }
+    QSet<Node *> nodes = allNodes;
+    Node *node;
+    foreach (node, allNodes)
+        nodes += node->getAllNodesSet();
+    nodes.remove(this);
+    return nodes;
 }
 
 /* Public Function: removeXNode(Connection)

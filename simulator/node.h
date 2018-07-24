@@ -20,42 +20,48 @@ class Node : public SchematicItem
     };
 
 public:
+    enum {Type = UserType + 3};
+    int type() const override {return Type;}
     explicit Node(
             SchematicItem *element = nullptr,
             QGraphicsItem *parent = nullptr
             );
-    ~Node();
+    ~Node() override;
 
     // required functions
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+    QRectF boundingRect() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
 
     // connecting/disconnecting functions
     void connectNode(Node *node);
-
+    void addNodes(Node *node);
     void addXNode(Node::Connection c) { xNodes.append(c); }
     void addYNode(Node::Connection c) { yNodes.append(c); }
 
     void removeXNode(Node::Connection c);
     void removeYNode(Node::Connection c);
+    void removeNode(Node *node) { allNodes.remove(node); }
 
     // display functions
     void showNode();
     void hideNode();
     void displayID(int id);
+    void hideID();
 
-    QSet<Node *> getConnectedElementNodes();
+    QSet<Node *> getConnectedNodes();
+    QSet<Node *> getAllNodesSet() { return allNodes; }
     int numConnections() { return xNodes.size() + yNodes.size(); }
     bool hasElement() { return (element != nullptr); }
     SchematicItem *getElement() { return element; }
     SchematicItem *element;
+    QSet<Node *> allNodes; // all nodes this node is connected to, not only those this node draws a wire to
 
 protected:
     void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-    void focusInEvent(QFocusEvent *event);
-    void focusOutEvent(QFocusEvent *event);
+    void focusInEvent(QFocusEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
 
 private:
     const int rad = 5;
@@ -66,8 +72,6 @@ private:
     QPen wire;
 
     QGraphicsSimpleTextItem *label = nullptr;
-
-    void getConnectedNodes(Node *node, QSet<Node *> *nodes, QSet<Node *> *seen);
 
 };
 

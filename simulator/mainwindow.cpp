@@ -23,42 +23,47 @@ MainWindow::MainWindow(QWidget *parent)
     const QChar Ohms(0x03A9);
     units.setUnicode(&Ohms, 1);
     selector->addButton("Resistor",
-                        ":/rcs/images/resistor.png",
-                        ":/rcs/images/resistorSelected.png",
-                        ":/rcs/images/resistorShadow.png",
+                        ":/images/resistor.png",
+                        ":/images/resistorSelected.png",
+                        ":/images/resistorShadow.png",
                         true, false, "R", units, 1);
     selector->addButton("Capacitor",
-                        ":/rcs/images/capacitor.png",
-                        ":/rcs/images/capacitorSelected.png",
-                        ":/rcs/images/capacitorShadow.png",
+                        ":/images/capacitor.png",
+                        ":/images/capacitorSelected.png",
+                        ":/images/capacitorShadow.png",
                         true, false, "C", "F", 1);
     selector->addButton("Inductor",
-                        ":/rcs/images/inductor.png",
-                        ":/rcs/images/inductorSelected.png",
-                        ":/rcs/images/inductorShadow.png",
+                        ":/images/inductor.png",
+                        ":/images/inductorSelected.png",
+                        ":/images/inductorShadow.png",
                         true, false, "L", "H", 1);
     selector->addButton("Ground",
-                        ":/rcs/images/ground.png",
-                        ":/rcs/images/groundSelected.png",
-                        ":/rcs/images/groundShadow.png",
+                        ":/images/ground.png",
+                        ":/images/groundSelected.png",
+                        ":/images/groundShadow.png",
+                        false, false, "", "", 0.5);
+    selector->addButton("Start Ground",
+                        ":/images/startGround.png",
+                        ":/images/startGroundSelected.png",
+                        ":/images/startGroundShadow.png",
                         false, false, "", "", 0.5);
     selector->addButton("Pressure",
-                        ":/rcs/images/voltageSource.png",
-                        ":/rcs/images/voltageSourceSelected.png",
-                        ":/rcs/images/voltageSourceShadow.png",
+                        ":/images/voltageSource.png",
+                        ":/images/voltageSourceSelected.png",
+                        ":/images/voltageSourceShadow.png",
                         true, true, "V", "V", 1);
     selector->addButton("Flow",
-                        ":/rcs/images/currentSource.png",
-                        ":/rcs/images/currentSourceSelected.png",
-                        ":/rcs/images/currentSourceShadow.png",
+                        ":/images/currentSource.png",
+                        ":/images/currentSourceSelected.png",
+                        ":/images/currentSourceShadow.png",
                         true, true, "Q", "A", 1);
 
 
-    QWidget *simulator = new QWidget();
-    QPushButton *simulateButton = new QPushButton("Run Simulation");
+    QWidget *simulator = new QWidget(this);
+    QPushButton *simulateButton = new QPushButton("Run Simulation", simulator);
     simulateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    connect(simulateButton, &QPushButton::clicked, schem, &Schematic::simulate); // TODO: connect to right function here
-    QHBoxLayout *simLayout = new QHBoxLayout;
+    connect(simulateButton, &QPushButton::clicked, schem, &Schematic::simulate);
+    QHBoxLayout *simLayout = new QHBoxLayout(simulator);
     simLayout->addWidget(simulateButton);
     simulator->setLayout(simLayout);
 
@@ -70,13 +75,13 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(view);
 
     // Set up selector dock
-    QDockWidget *dockSelector = new QDockWidget;
+    QDockWidget *dockSelector = new QDockWidget(this);
     dockSelector->setWidget(selector);
     dockSelector->setAllowedAreas(Qt::LeftDockWidgetArea);
     addDockWidget(Qt::LeftDockWidgetArea,
                   dockSelector);
 
-    QDockWidget *dockSimulator = new QDockWidget;
+    QDockWidget *dockSimulator = new QDockWidget(this);
     dockSimulator->setWidget(simulator);
     dockSimulator->setAllowedAreas(Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea,

@@ -8,14 +8,14 @@ class SchematicItem : public QObject, public QGraphicsItem
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
 public:
+    enum {Type = UserType + 1 };
+    int type() const override { return Type; }
     SchematicItem(QString type, QGraphicsItem *parent = nullptr, QString subtype = "")
         : QGraphicsItem(parent)
     {
         setData(TypeKey, type);
         setData(SubtypeKey, subtype);
     }
-
-    virtual ~SchematicItem() {}
 
     QString getType() { return data(TypeKey).toString(); }
     void setType(QString type) { setData(TypeKey, type); }

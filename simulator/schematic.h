@@ -1,6 +1,9 @@
 #ifndef SCHEMATIC_H
 #define SCHEMATIC_H
 
+#include <iostream>       // std::cout, std::endl
+#include <thread>         // std::this_thread::sleep_for
+#include <chrono>         // std::chrono::seconds
 #include <QtWidgets>
 
 #include "circuitelement.h"
@@ -16,6 +19,7 @@ public:
     explicit Schematic(QObject *parent = nullptr);
     enum Mode { Edit, Build, Draw };
     Q_ENUM(Mode)
+    enum { NoStartError = 1, IncompleteError = 2 };
 
     void setMode(Mode mode) { this->mode = mode; }
     void setElementProperties(CircuitElement::ElementProperties &properties,
@@ -42,7 +46,7 @@ private:
 
     // Track mouse
     QPointF curPos;
-    int lastClickX, lastClickY;
+    qreal lastClickX, lastClickY;
 
     // Drawing wires
     Node *startNode;
@@ -54,10 +58,11 @@ private:
     SimulationOptionsDialog *simulationOptions;
 
     // Parsing
-    void parse();
-    void parseFrom(Node *startNode, int &curNodeID);
-    bool grounded(Node *node);
+    int parse();
+    int parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *>&seen);
     int showSimulationOptions();
+    CircuitElement *getStartingElement();
+    void removeNodeLabels();
 
     // Drawing functions
     void addElement();
@@ -66,6 +71,7 @@ private:
     void addWire(Node *endNode);
     QPointF gridPos(QPointF point);
     QPointF gridPos(qreal x, qreal y);
+    void deleteSelection();
 };
 
 #endif // SCHEMATIC_H

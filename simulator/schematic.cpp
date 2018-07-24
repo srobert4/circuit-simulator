@@ -9,6 +9,7 @@ Schematic::Schematic(QObject *parent)
 {
     netlist = nullptr;
     curShadow = nullptr;
+    simulationOptions = nullptr;
     mode = Schematic::Edit;
 }
 
@@ -37,7 +38,35 @@ void Schematic::simulate()
     netlist = new Netlist();
 
     // Parse diagram and add elements
-    parse();
+    int ret = parse();
+    if (ret != 0) {
+        QString errormsg;
+        switch (ret) {
+        case Schematic::NoStartError:
+            errormsg = "Your circuit must contain a starting ground element.";
+            break;
+        case Netlist::NoNameError:
+            errormsg = "All elements must be named.";
+            break;
+        case Netlist::NoValueError:
+            errormsg = "All elements must have a value assigned.";
+            break;
+        case Schematic::IncompleteError:
+            errormsg = "Incomplete circuit.";
+            break;
+        case Netlist::DuplicateNameError:
+            errormsg = "Duplicate element names. All element names must be unique.";
+            break;
+        case -1:
+            errormsg = "Unknown error occurred.";
+        }
+        QMessageBox *box = new QMessageBox(QMessageBox::Critical, "Parsing Error", errormsg);
+        box->exec();
+        delete box;
+        removeNodeLabels();
+        return;
+
+    }
 
     // Show options dialog box
     simulationOptions = new SimulationOptionsDialog(netlist);
@@ -53,6 +82,7 @@ void Schematic::simulate()
 //    qInfo() << "Run simulation with: " << command;
     delete simulationOptions;
     simulationOptions = nullptr;
+    removeNodeLabels();
 }
 
 // ============ PRIVATE FUNCTIONS ================================
@@ -102,13 +132,14 @@ void Schematic::startDrawingWire()
 void Schematic::stopDrawingWire(Node *endNode)
 {
     if (endNode != nullptr) {
-        startNode->connectNode(endNode);
+        removeItem(activeNode);
         delete activeNode;
+        startNode->connectNode(endNode);
     } else {
         activeNode->setPos(gridPos(activeNode->scenePos()));
     }
-    startNode = NULL;
-    activeNode = NULL;
+    startNode = nullptr;
+    activeNode = nullptr;
 }
 
 /* Private Function: gridPos(qreal x, qreal y)
@@ -132,45 +163,109 @@ QPointF Schematic::gridPos(QPointF point)
     return gridPos(point.x(), point.y());
 }
 
-void Schematic::parse()
+CircuitElement *Schematic::getStartingElement()
+{
+    return nullptr;
+}
+
+int Schematic::parse()
 {
     CircuitElement *start = nullptr;
-    for(auto item : items()) {
-        SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(item);
-        if (schemIt->getSubtype() == "ground") {
-            start = qgraphicsitem_cast<CircuitElement *>(item);
-            break;
+    QList<QGraphicsItem *> items = this->items();
+    foreach(QGraphicsItem *item, items) {
+        if (item->type() == CircuitElement::Type) {
+            CircuitElement *element = qgraphicsitem_cast<CircuitElement *>(item);
+            if (element->getSubtype() == "start ground") {
+                start = element;
+                break;
+            }
         }
     }
-    if (start == nullptr) return; // throw error
+    if (start == nullptr) return NoStartError;
 
-    int nodeID = 0;
-    Node *startNode = start->getNodeOne();
-    parseFrom(startNode, nodeID);
+    int nodeID = -1;
+    Node *startNode = start->getNodeTwo(); // TODO: don't hardcode
+    QSet<Node *> seen;
+    return parseFrom(startNode, 0, nodeID, nullptr, seen);
 }
 
-void Schematic::parseFrom(Node *startNode, int &curNodeID)
+int Schematic::parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *> &seen)
 {
-    if (startNode == nullptr) return; // TODO - get angry
-    int startNodeID = curNodeID;
-    for (Node *node : startNode->getConnectedElementNodes()) {
-        CircuitElement *element = qgraphicsitem_cast<CircuitElement *>(node->getElement());
-        if(element->getSubtype() == "ground") continue;
+    int ret;
+    if (startNode == nullptr) return -1;
 
-        curNodeID = (grounded(element->getOtherNode(node)) ? 0 : curNodeID + 1);
-        netlist->addElement(element, startNodeID, curNodeID);
+    if (startNode->hasElement() && curNodeID != -1) {
+        CircuitElement *element = qgraphicsitem_cast<CircuitElement *>(startNode->getElement());
+
+        if (element->getSubtype() == "ground") {
+            ret = netlist->groundElement(lastAdded);
+            if (ret != 0) {
+                return ret;
+            }
+            startNode->displayID(0);
+            update();
+            QApplication::processEvents();
+            std::this_thread::sleep_for (std::chrono::seconds(1));
+            curNodeID--;
+            return 0;
+        }
+
+        curNodeID++;
+        ret = netlist->addElement(element, startNodeID, curNodeID);
+        if (ret != 0) return ret;
+        lastAdded = element;
         startNode->displayID(startNodeID);
-        parseFrom(element->getOtherNode(node), curNodeID);
+
+        update();
+
+        QApplication::processEvents();
+        std::this_thread::sleep_for (std::chrono::seconds(1));
+        seen.insert(startNode);
+        startNode = element->getOtherNode(startNode);
+    }
+
+    if (curNodeID == -1) curNodeID = 0;
+    seen.insert(startNode);
+    startNodeID = curNodeID;
+    qInfo() << "Node is connected to " << startNode->getConnectedNodes().size() << " nodes";
+    Node *node;
+    int connections = 0;
+    foreach (node, startNode->getConnectedNodes()) {
+        if (seen.contains(node)) continue;
+        connections++;
+        ret = parseFrom(node, startNodeID, curNodeID, lastAdded, seen);
+        if (ret != 0) return ret;
+    }
+    if (connections == 0) return IncompleteError;
+    return 0;
+}
+
+void Schematic::removeNodeLabels()
+{
+    foreach(QGraphicsItem *item, items()) {
+        if (item->type() == Node::Type){
+            Node *node = qgraphicsitem_cast<Node *>(item);
+            node->hideID();
+        }
     }
 }
 
-bool Schematic::grounded(Node *node)
+void Schematic::deleteSelection()
 {
-    for (Node *n : node->getConnectedElementNodes()) {
-        CircuitElement *element = qgraphicsitem_cast<CircuitElement *>(n->getElement());
-        if (element->getSubtype() == "ground") return true;
+    QList<QGraphicsItem *> toDelete;
+    foreach(QGraphicsItem *item, selectedItems()) {
+        if (item->type() == CircuitElement::Type ||
+                (item->type() == Node::Type &&
+                 !qgraphicsitem_cast<Node *>(item)->hasElement())) {
+           toDelete.append(item);
+        }
     }
-    return false;
+
+    foreach(QGraphicsItem *item, toDelete) {
+        toDelete.removeOne(item);
+        removeItem(item);
+        delete item;
+    }
 }
 
 // ============= EVENT HANDLERS ================================
@@ -186,10 +281,10 @@ bool Schematic::grounded(Node *node)
  */
 void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    SchematicItem *item = nullptr;
     switch( mode )
     {
     case Schematic::Build:
+    {
         // store click position
         lastClickX = event->scenePos().x();
         lastClickY = event->scenePos().y();
@@ -197,7 +292,7 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         // stop displaying shadow
         removeItem(curShadow);
         delete curShadow;
-        curShadow = NULL;
+        curShadow = nullptr;
 
         // add element
         addElement();
@@ -206,38 +301,43 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         // tell selector to deselect all
         emit schematicClicked();
         break;
+    }
 
     case Schematic::Draw:
+    {
         // Find out if stopped on a node or not
-        for (auto it : items(event->scenePos())) {
-            SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
-            if (schemIt != activeNode && schemIt->getType() == "node"){
-                item = schemIt;
+        Node *node = nullptr;
+        foreach (QGraphicsItem *it, items(event->scenePos())) {
+            if (it->type() == Node::Type && it != activeNode){
+                node = qgraphicsitem_cast<Node *>(it);
                 break;
             }
         }
         // Place wire and exit drawing mode
-        stopDrawingWire(qgraphicsitem_cast<Node *>(item));
+        stopDrawingWire(node);
         mode = Schematic::Edit;
         break;
+    }
 
     case Schematic::Edit:
+    {
         // If we didn't click on anything, do nothing
-        item = qgraphicsitem_cast<SchematicItem *>(itemAt(event->scenePos(), QTransform()));
-        if (!item) break;
+        QGraphicsItem *it = itemAt(event->scenePos(), QTransform());
+        if (!it) break;
 
         // Either start drawing or move an element
-        if (item->getType() == "node") {
-           startNode = qgraphicsitem_cast<Node *>(item);
+        if (it->type() == Node::Type) {
+           startNode = qgraphicsitem_cast<Node *>(it);
            startDrawingWire();
            mode = Schematic::Draw;
-        } else if (item->getType() == "element") {
-            for (auto it : selectedItems()) {
-                it->setPos(gridPos(it->pos())); // snap all selected items to grid
+        } else if (it->type() == CircuitElement::Type) {
+            foreach(QGraphicsItem *graphicsIt, selectedItems()) {
+                graphicsIt->setPos(gridPos(graphicsIt->pos())); // snap all selected items to grid
             }
         }
 
         break;
+    }
     }
 
     QGraphicsScene::mouseReleaseEvent(event);
@@ -257,13 +357,18 @@ void Schematic::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     switch( mode )
     {
     case Schematic::Build:
-        if (curShadow == NULL) {
+    {
+        QGraphicsItem *it;
+        foreach (it, selectedItems())
+            it->setSelected(false);
+        if (curShadow == nullptr) {
             curShadow = addPixmap(shadowImage);
             curShadow->setOffset(-shadowImage.width() / 2, -shadowImage.height() / 2);
             curShadow->setFlag(QGraphicsItem::ItemIsMovable);
         }
         curShadow->setPos(curPos);
         break;
+    }
     case Schematic::Draw:
         activeNode->setPos(curPos);
         break;
@@ -308,26 +413,19 @@ void Schematic::keyReleaseEvent(QKeyEvent *event)
     switch(event->key())
     {
     case  Qt::Key_Delete:
-        for (auto it : selectedItems()) {
-            SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
-            if (schemIt->getType() != "")
-                delete it;
-        }
+        deleteSelection();
         break;
 
     case Qt::Key_Backspace:
-        for (auto it : selectedItems()) {
-            SchematicItem *schemIt = qgraphicsitem_cast<SchematicItem *>(it);
-            if (schemIt->getType() != "")
-                delete it;
-        }
+        deleteSelection();
         break;
 
     case Qt::Key_Escape:
         if (mode == Schematic::Draw) {
+            removeItem(activeNode);
             delete activeNode;
-            activeNode = NULL;
-            startNode = NULL;
+            activeNode = nullptr;
+            startNode = nullptr;
             mode = Schematic::Edit;
         }
         for (auto it : selectedItems())

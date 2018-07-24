@@ -11,7 +11,9 @@ public:
     explicit Netlist(const QString &name = "", QObject *parent = nullptr);
     ~Netlist() {}
 
-    void addElement(
+    enum { NoValueError = 3, NoNameError = 4, DuplicateNameError = 5 };
+
+    int addElement(
             const QString &element,
             const QString &name,
             const QString &nodeIn,
@@ -20,7 +22,8 @@ public:
             const QString &units = "",
             const QString &externalFilename = ""
             );
-    void addElement(CircuitElement *element, int nodeIn, int nodeOut);
+    int addElement(CircuitElement *element, int nodeIn, int nodeOut);
+    int groundElement(CircuitElement *element);
     void addInitialCondition(QString node, const QString &condition);
 
     void setName(const QString &name);

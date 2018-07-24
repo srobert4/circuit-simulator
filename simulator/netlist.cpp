@@ -8,7 +8,7 @@ Netlist::Netlist(const QString &name, QObject *parent) : QObject(parent)
 
 void Netlist::setName(const QString &name) { this->name = name; }
 
-void Netlist::addElement(
+int Netlist::addElement(
         const QString &element,
         const QString &name,
         const QString &nodeIn,
@@ -18,6 +18,10 @@ void Netlist::addElement(
         const QString &externalFilename
         )
 {
+    if (name == "") return NoNameError;
+    if (value == "") return NoValueError;
+    if (elementNames.contains(element + name)) return DuplicateNameError;
+
     // construct element
     QString line = element + name + " "  + nodeIn + " " + nodeOut + " " + value + units;
 
@@ -25,15 +29,19 @@ void Netlist::addElement(
     if (externalFilename != "") {
         boundaryConditions[element + name] = externalFilename;
     }
-
     elementNames.insert(element + name);
     nodeNames.insert(nodeIn);
     nodeNames.insert(nodeOut);
     elements.append(line);
+    return 0;
 }
 
-void Netlist::addElement(CircuitElement *element, int nodeIn, int nodeOut)
+int Netlist::addElement(CircuitElement *element, int nodeIn, int nodeOut)
 {
+    if (element->getValue() == "" and element->getExternalFile() == "") return NoValueError;
+    if (element->getName().length() == 1) return NoNameError;
+    if (elementNames.contains(element->getName())) return DuplicateNameError;
+
     QString line = element->getName() + " " + QString::number(nodeIn) + " " + QString::number(nodeOut);
     if (element->getExternalFile() != "") {
         line += " external";
@@ -41,10 +49,26 @@ void Netlist::addElement(CircuitElement *element, int nodeIn, int nodeOut)
     } else {
         line += (" " + element->getValue());
     }
+
     elementNames.insert(element->getName());
     nodeNames.insert(QString::number(nodeIn));
     nodeNames.insert(QString::number(nodeOut));
     elements.append(line);
+    return 0;
+}
+
+int Netlist::groundElement(CircuitElement *element)
+{
+    if (!elementNames.contains(element->getName())) return -1;
+    for (QString line : elements) {
+        if (line.split(" ")[0] != element->getName()) continue;
+        elements.removeOne(line);
+        QStringList tokens = line.split(" ");
+        nodeNames.remove(tokens[2]);
+        tokens[2] = QString::number(0);
+        elements.append(tokens.join(" "));
+    }
+    return 0;
 }
 
 void Netlist::addInitialCondition(QString node, const QString &condition)

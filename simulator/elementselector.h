@@ -32,7 +32,7 @@ private:
     QMap<int, QString> shadowImagePaths;
     int curId = 1;
     bool deselectOnRelease;
-    const int elementWidth = 160;
+    const qreal elementWidth = 160.0;
 
     void deselectAll();
 
