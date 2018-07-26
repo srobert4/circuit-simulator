@@ -45,14 +45,6 @@ void ElementSelector::addButton(const QString &buttonLabel,
                                 QString units,
                                 qreal widthRatio)
 {
-    // create button
-    QPushButton *button = new QPushButton(buttonLabel, this);
-    button->setCheckable(true);
-
-    // add button to selector
-    buttons->addButton(button, curId);
-    layout->addWidget(button, curId, 0);
-
     // associate with path and element
     CircuitElement::ElementProperties elementProperties;
     elementProperties.image = QPixmap(imgPath);
@@ -67,6 +59,17 @@ void ElementSelector::addButton(const QString &buttonLabel,
     elementProperties.subtype = buttonLabel.toLower();
     elementProperties.prefix = prefix;
     elementProperties.units = units;
+
+    // create button
+    QPushButton *button = new QPushButton(this);
+    QIcon icon(elementProperties.image);
+    button->setIcon(icon);
+    button->setIconSize(QSize(elementProperties.image.width() / 2, elementProperties.image.height() / 2));
+    button->setCheckable(true);
+
+    // add button to selector
+    buttons->addButton(button, curId);
+    layout->addWidget(button, curId, 0);
 
     shadowImagePaths[curId] = imgShadowPath;
     properties[curId] = elementProperties;

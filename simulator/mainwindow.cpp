@@ -58,15 +58,6 @@ MainWindow::MainWindow(QWidget *parent)
                         ":/images/currentSourceShadow.png",
                         true, true, "Q", "A", 1);
 
-
-    QWidget *simulator = new QWidget(this);
-    QPushButton *simulateButton = new QPushButton("Run Simulation", simulator);
-    simulateButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    connect(simulateButton, &QPushButton::clicked, schem, &Schematic::simulate);
-    QHBoxLayout *simLayout = new QHBoxLayout(simulator);
-    simLayout->addWidget(simulateButton);
-    simulator->setLayout(simLayout);
-
     // Set up schematic graphics view
     view = new QGraphicsView(schem, this);
     view->setMouseTracking(true);
@@ -81,12 +72,18 @@ MainWindow::MainWindow(QWidget *parent)
     addDockWidget(Qt::LeftDockWidgetArea,
                   dockSelector);
 
-    QDockWidget *dockSimulator = new QDockWidget(this);
-    dockSimulator->setWidget(simulator);
-    dockSimulator->setAllowedAreas(Qt::BottomDockWidgetArea);
-    addDockWidget(Qt::BottomDockWidgetArea,
-                  dockSimulator);
-    setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
+    // Set up toolbar
+    QToolBar *toolbar = addToolBar("Schematic");
+    toolbar->setAllowedAreas(Qt::TopToolBarArea);
+    QAction *deleteButton = toolbar->addAction("Delete");
+    QAction *clearButton = toolbar->addAction("Clear");
+    QAction *simulateButton = toolbar->addAction("Run simulation");
+    QAction *saveButton = toolbar->addAction("Save Netlist");
+
+    connect(deleteButton, &QAction::triggered, schem, &Schematic::deletePressed);
+    connect(clearButton, &QAction::triggered, schem, &Schematic::clearPressed);
+    connect(simulateButton, &QAction::triggered, schem, &Schematic::simulatePressed);
+    connect(saveButton, &QAction::triggered, schem, &Schematic::savePressed);
 }
 
 MainWindow::~MainWindow()

@@ -23,6 +23,12 @@ CircuitElement::CircuitElement(
     display = selected; // icon is selected when placed
     setSelected(true);
 
+
+    nodeOne = new Node(this, this);
+    nodeTwo = new Node(this, this);
+    nodeOne->setPos(QPointF(-_width / 2, 0));
+    nodeTwo->setPos(QPointF(_width / 2, 0));
+
     dialogBox = nullptr;
     if (!properties.hasLabel) return;
 
@@ -92,6 +98,47 @@ Node *CircuitElement::getOtherNode(Node *node)
     if (node == nodeOne) return nodeTwo;
     if (node == nodeTwo) return nodeOne;
     return nullptr;
+}
+
+// ========= PUBLIC FUNCTIONS ==========================
+
+void CircuitElement::rotate(qreal angle)
+{
+    // rotate pixmap
+    setRotation(rotation() + angle);
+    label->setRotation(-rotation());
+
+    // move label to appropriate position
+    int rot = static_cast<int>(rotation()) % 360;
+    qInfo() << rot;
+    if (rot == 0 || abs(rot) == 360) {
+        label->setPos(-label->boundingRect().width() / 2, _height / 2);
+    } else if (rot == 90 || rot == -270) {
+        label->setPos(-label->boundingRect().width() / 2, -_height / 2 - label->boundingRect().width());
+    } else if (abs(rot) == 180) {
+        label->setPos(label->boundingRect().width() / 2, -_height / 2);
+    } else if (rot == -90 || rot == 270) {
+        label->setPos(label->boundingRect().width() / 2, _height / 2 + label->boundingRect().width());
+    }
+
+    // delete nodes
+    QSet<Node *> nodes = nodeOne->getAllNodesSet();
+    delete nodeOne;
+    nodeOne = new Node(this, this);
+    foreach(Node *node, nodes)
+        nodeOne->connectNode(node);
+
+    nodes = nodeTwo->getAllNodesSet();
+    delete nodeTwo;
+    nodeTwo = new Node(this, this);
+    foreach(Node *node, nodes)
+        nodeTwo->connectNode(node);
+    // create new nodes and connect
+
+    nodeOne->setPos(QPointF(-_width / 2, 0));
+    nodeOne->setRotation(-rotation());
+    nodeTwo->setPos(QPointF(_width / 2, 0));
+    nodeTwo->setRotation(-rotation());
 }
 
 // ========= PRIVATE FUNCTIONS =========================

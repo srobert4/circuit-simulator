@@ -31,59 +31,6 @@ void Schematic::setElementProperties(CircuitElement::ElementProperties &properti
     shadowImage = shadowImage.scaledToWidth(properties.image.width());
 }
 
-void Schematic::simulate()
-{
-    // Construct netlist
-    if (netlist != nullptr) delete netlist;
-    netlist = new Netlist();
-
-    // Parse diagram and add elements
-    int ret = parse();
-    if (ret != 0) {
-        QString errormsg;
-        switch (ret) {
-        case Schematic::NoStartError:
-            errormsg = "Your circuit must contain a starting ground element.";
-            break;
-        case Netlist::NoNameError:
-            errormsg = "All elements must be named.";
-            break;
-        case Netlist::NoValueError:
-            errormsg = "All elements must have a value assigned.";
-            break;
-        case Schematic::IncompleteError:
-            errormsg = "Incomplete circuit.";
-            break;
-        case Netlist::DuplicateNameError:
-            errormsg = "Duplicate element names. All element names must be unique.";
-            break;
-        case -1:
-            errormsg = "Unknown error occurred.";
-        }
-        QMessageBox *box = new QMessageBox(QMessageBox::Critical, "Parsing Error", errormsg);
-        box->exec();
-        delete box;
-        removeNodeLabels();
-        return;
-
-    }
-
-    // Show options dialog box
-    simulationOptions = new SimulationOptionsDialog(netlist);
-    if(simulationOptions->exec() == QDialog::Rejected) return;
-    simulationOptions->processInput();
-
-    // Write netlist to file
-    netlist->writeToFile(simulationOptions->getFilename());
-    qInfo() << "Written to file: " << simulationOptions->getFilename();
-
-    // Get command and display in dialog box
-//    QString command = netlist->getCommand();
-//    qInfo() << "Run simulation with: " << command;
-    delete simulationOptions;
-    simulationOptions = nullptr;
-    removeNodeLabels();
-}
 
 // ============ PRIVATE FUNCTIONS ================================
 
@@ -100,15 +47,27 @@ void Schematic::addElement() {
     CircuitElement *elem = new CircuitElement(elementProperties);
     elem->setPos(gridPos(lastClickX, lastClickY));
 
-    Node *nodeOne = new Node(elem, elem);
-    Node *nodeTwo = new Node(elem, elem);
-    nodeOne->setPos(QPointF(-elem->width() / 2, 0));
-    nodeTwo->setPos(QPointF(elem->width() / 2, 0));
-
-    elem->setNodes(nodeOne, nodeTwo);
-
     addItem(elem);
+    checkNodesForConnections(elem);
     setFocusItem(elem);
+}
+
+void Schematic::checkNodesForConnections(CircuitElement *element)
+{
+    // connect to elements if nodes on top of one enother
+    Node *nodeOne = element->getNodeOne();
+    foreach(QGraphicsItem *item, collidingItems(nodeOne)) {
+        if (item->type() == Node::Type && item != nodeOne) {
+            Node *node = qgraphicsitem_cast<Node *>(item);
+            nodeOne->connectNode(node);
+        }
+    }
+
+    Node *nodeTwo = element->getNodeTwo();
+    foreach(QGraphicsItem *item, collidingItems(nodeTwo)) {
+        if (item->type() == Node::Type && item != nodeTwo)
+            nodeTwo->connectNode(qgraphicsitem_cast<Node *>(item));
+    }
 }
 
 /* Private Function: startDrawingWire()
@@ -166,6 +125,60 @@ QPointF Schematic::gridPos(QPointF point)
 CircuitElement *Schematic::getStartingElement()
 {
     return nullptr;
+}
+
+void Schematic::simulate(bool run)
+{
+    // Construct netlist
+    if (netlist != nullptr) delete netlist;
+    netlist = new Netlist();
+
+    // Parse diagram and add elements
+    int ret = parse();
+    if (ret != 0) {
+        QString errormsg;
+        switch (ret) {
+        case Schematic::NoStartError:
+            errormsg = "Your circuit must contain a starting ground element.";
+            break;
+        case Netlist::NoNameError:
+            errormsg = "All elements must be named.";
+            break;
+        case Netlist::NoValueError:
+            errormsg = "All elements must have a value assigned.";
+            break;
+        case Schematic::IncompleteError:
+            errormsg = "Incomplete circuit.";
+            break;
+        case Netlist::DuplicateNameError:
+            errormsg = "Duplicate element names. All element names must be unique.";
+            break;
+        case -1:
+            errormsg = "Unknown error occurred.";
+        }
+        QMessageBox *box = new QMessageBox(QMessageBox::Critical, "Parsing Error", errormsg);
+        box->exec();
+        delete box;
+        removeNodeLabels();
+        return;
+
+    }
+
+    // Show options dialog box
+    simulationOptions = new SimulationWizard(netlist);
+    if(simulationOptions->exec() == QDialog::Rejected) return;
+    simulationOptions->processInput();
+
+    // Write netlist to file
+    netlist->writeToFile(simulationOptions->getFilename());
+    qInfo() << "Written to file: " << simulationOptions->getFilename();
+
+    // Get command and display in dialog box
+//    QString command = netlist->getCommand();
+//    qInfo() << "Run simulation with: " << command;
+    delete simulationOptions;
+    simulationOptions = nullptr;
+    removeNodeLabels();
 }
 
 int Schematic::parse()
@@ -333,6 +346,8 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         } else if (it->type() == CircuitElement::Type) {
             foreach(QGraphicsItem *graphicsIt, selectedItems()) {
                 graphicsIt->setPos(gridPos(graphicsIt->pos())); // snap all selected items to grid
+                if (graphicsIt->type() == CircuitElement::Type)
+                    checkNodesForConnections(qgraphicsitem_cast<CircuitElement *>(graphicsIt));
             }
         }
 
@@ -430,6 +445,21 @@ void Schematic::keyReleaseEvent(QKeyEvent *event)
         }
         for (auto it : selectedItems())
             it->setSelected(false);
+        break;
+
+    case Qt::Key_Left:
+        foreach(QGraphicsItem *item,  selectedItems()) {
+            if (item->type() == CircuitElement::Type) {
+                qgraphicsitem_cast<CircuitElement *>(item)->rotate(-90);
+            }
+        }
+        break;
+    case Qt::Key_Right:
+        foreach(QGraphicsItem *item,  selectedItems()) {
+            if (item->type() == CircuitElement::Type) {
+                qgraphicsitem_cast<CircuitElement *>(item)->rotate(90);
+            }
+        }
         break;
     }
     QGraphicsScene::keyReleaseEvent(event);

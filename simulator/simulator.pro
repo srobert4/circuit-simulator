@@ -32,7 +32,7 @@ SOURCES += \
     node.cpp \
     netlist.cpp \
     boundarycondition.cpp \
-    simulationoptionsdialog.cpp
+    simulationwizard.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -43,7 +43,7 @@ HEADERS += \
     schematicitem.h \
     netlist.h \
     boundarycondition.h \
-    simulationoptionsdialog.h
+    simulationwizard.h
 
 RESOURCES += \
     images.qrc

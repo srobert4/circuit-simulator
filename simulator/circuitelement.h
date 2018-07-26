@@ -37,6 +37,7 @@ public:
 
     int width() { return _width; }
     int height() { return _height; }
+    void rotate(qreal angle);
 
     void setNodes(Node *nodeOne, Node *nodeTwo);
     Node *getNodeOne() { return nodeOne; }

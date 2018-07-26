@@ -9,7 +9,7 @@
 #include "circuitelement.h"
 #include "node.h"
 #include "netlist.h"
-#include "simulationoptionsdialog.h"
+#include "simulationwizard.h"
 
 class Schematic : public QGraphicsScene
 {
@@ -24,7 +24,11 @@ public:
     void setMode(Mode mode) { this->mode = mode; }
     void setElementProperties(CircuitElement::ElementProperties &properties,
                               QString &shadowPath);
-    void simulate();
+
+    void simulatePressed() { simulate(); }
+    void deletePressed() { deleteSelection(); }
+    void clearPressed() { clear(); }
+    void savePressed() { simulate(false); }
 
 protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
@@ -55,9 +59,10 @@ private:
     // Netlist
     Netlist *netlist;
     QString netlistFilename;
-    SimulationOptionsDialog *simulationOptions;
+    SimulationWizard *simulationOptions;
 
     // Parsing
+    void simulate(bool run = true);
     int parse();
     int parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *>&seen);
     int showSimulationOptions();
@@ -66,6 +71,7 @@ private:
 
     // Drawing functions
     void addElement();
+    void checkNodesForConnections(CircuitElement *element);
     void startDrawingWire();
     void stopDrawingWire(Node *endNode);
     void addWire(Node *endNode);
