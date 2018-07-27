@@ -27,6 +27,7 @@ public:
     void addInitialCondition(QString node, const QString &condition);
 
     void setName(const QString &name);
+    void setFilename(const QString &filename);
     void setGraphing(QString &graphName, QList<QString> &nodes);
     void setAnalysis(
         const QString &type,
@@ -40,6 +41,7 @@ public:
     QString getCommand();
     QSet<QString> getElementNames() { return elementNames; }
     QSet<QString> getNodeNames() { return nodeNames; }
+    bool ready() {return fileReady;}
 
 private:
     QString name;
@@ -50,6 +52,7 @@ private:
     QString filename;
     QString graphingCommand;
     QMap<QString, QString> boundaryConditions;
+    bool fileReady;
 };
 
 #endif // NETLIST_H

@@ -28,7 +28,7 @@ public:
     void simulatePressed() { simulate(); }
     void deletePressed() { deleteSelection(); }
     void clearPressed() { clear(); }
-    void savePressed() { simulate(false); }
+    void savePressed() { simulate(true); }
 
 protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
@@ -62,7 +62,7 @@ private:
     SimulationWizard *simulationOptions;
 
     // Parsing
-    void simulate(bool run = true);
+    void simulate(bool saveOnly = false);
     int parse();
     int parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *>&seen);
     int showSimulationOptions();

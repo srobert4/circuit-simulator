@@ -32,7 +32,10 @@ SOURCES += \
     node.cpp \
     netlist.cpp \
     boundarycondition.cpp \
-    simulationwizard.cpp
+    simulationwizard.cpp \
+    savewizardpage.cpp \
+    introwizardpage.cpp \
+    simulatewizardpage.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -43,7 +46,10 @@ HEADERS += \
     schematicitem.h \
     netlist.h \
     boundarycondition.h \
-    simulationwizard.h
+    simulationwizard.h \
+    savewizardpage.h \
+    introwizardpage.h \
+    simulatewizardpage.h
 
 RESOURCES += \
     images.qrc

@@ -52,6 +52,12 @@ void Schematic::addElement() {
     setFocusItem(elem);
 }
 
+/* Private Function: checkNodesForConnections(CircuitElement *)
+ * ------------------------------------------------------------
+ * Check if the nodes of the given element are overlapping
+ * with any other nodes. If they are then connect overlapping
+ * nodes.
+ */
 void Schematic::checkNodesForConnections(CircuitElement *element)
 {
     // connect to elements if nodes on top of one enother
@@ -127,7 +133,7 @@ CircuitElement *Schematic::getStartingElement()
     return nullptr;
 }
 
-void Schematic::simulate(bool run)
+void Schematic::simulate(bool saveOnly)
 {
     // Construct netlist
     if (netlist != nullptr) delete netlist;
@@ -165,17 +171,9 @@ void Schematic::simulate(bool run)
     }
 
     // Show options dialog box
-    simulationOptions = new SimulationWizard(netlist);
-    if(simulationOptions->exec() == QDialog::Rejected) return;
-    simulationOptions->processInput();
+    simulationOptions = new SimulationWizard(netlist, saveOnly);
+    simulationOptions->exec();
 
-    // Write netlist to file
-    netlist->writeToFile(simulationOptions->getFilename());
-    qInfo() << "Written to file: " << simulationOptions->getFilename();
-
-    // Get command and display in dialog box
-//    QString command = netlist->getCommand();
-//    qInfo() << "Run simulation with: " << command;
     delete simulationOptions;
     simulationOptions = nullptr;
     removeNodeLabels();
@@ -253,6 +251,10 @@ int Schematic::parseFrom(Node *startNode, int startNodeID, int &curNodeID, Circu
     return 0;
 }
 
+/* Private Function: removeNodeLabels()
+ * ------------------------------------
+ * Remove all node labels from the schematic
+ */
 void Schematic::removeNodeLabels()
 {
     foreach(QGraphicsItem *item, items()) {
@@ -263,6 +265,10 @@ void Schematic::removeNodeLabels()
     }
 }
 
+/* Private Function: deleteSelection()
+ * -----------------------------------
+ * Delete selected graphics items
+ */
 void Schematic::deleteSelection()
 {
     QList<QGraphicsItem *> toDelete;

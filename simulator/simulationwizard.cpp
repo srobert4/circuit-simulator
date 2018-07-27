@@ -1,21 +1,39 @@
 #include "simulationwizard.h"
 
-SimulationWizard::SimulationWizard(Netlist *netlist, QWidget *parent) : QWizard(parent)
+SimulationWizard::SimulationWizard(Netlist *netlist, bool saveOnly, QWidget *parent) : QWizard(parent)
 {
     this->netlist = netlist;
+    this->saveOnly = saveOnly;
 
-    addPage(createSimulationPage());
-    addPage(createInitialCondPage());
-    addPage(createSavePage());
+    if (!saveOnly) {
+        setPage(Page_Intro, new IntroWizardPage);
+    }
+
+    setPage(Page_SimOptions, createSimOptionsPage());
+
+    setPage(Page_InitialConds, createInitialCondPage());
+
+    SaveWizardPage *savePage = new SaveWizardPage;
+    connect(savePage, &SaveWizardPage::ready,
+            [this]() {
+        this->processInput();
+        this->netlist->writeToFile(this->filename);
+    });
+
+    setPage(Page_SaveAs, savePage);
+
+    setPage(Page_RunSim, new simulateWizardPage);
+
+    setPage(Page_GraphOptions, createGraphOptionsPage());
 
     setWindowTitle("Simulation Wizard");
     show();
 }
 
-QWizardPage *SimulationWizard::createSimulationPage()
+QWizardPage *SimulationWizard::createSimOptionsPage()
 {
     QWizardPage *page = new QWizardPage;
-    page->setTitle("Simulation Mode");
+    page->setTitle("Set Simulation Mode");
 
     simulationTypeComboBox = new QComboBox(this);
     simulationTypeComboBox->addItems(simulationTypes);
@@ -68,7 +86,7 @@ QWizardPage *SimulationWizard::createInitialCondPage()
 {
 
     QWizardPage *page = new QWizardPage;
-    page->setTitle("Initial Conditions");
+    page->setTitle("Set Initial Conditions");
 
     QLabel *label = new QLabel("Each node is labelled on the schematic. For any nodes "
                                "for which you want to set the initial pressure, enter "
@@ -79,6 +97,7 @@ QWizardPage *SimulationWizard::createInitialCondPage()
     foreach(QString node, netlist->getNodeNames()) {
         QLineEdit *line = new QLineEdit(this);
         formLayout->addRow("Node " + node, line);
+        nodeNames.append(node);
         initialConditionLineEdits.append(line);
     }
 
@@ -89,60 +108,54 @@ QWizardPage *SimulationWizard::createInitialCondPage()
     return page;
 }
 
-QWizardPage *SimulationWizard::createSavePage()
+QWizardPage *SimulationWizard::createGraphOptionsPage()
 {
     QWizardPage *page = new QWizardPage;
-    page->setTitle("Save Circuit");
-
-    QLabel *label = new QLabel("Save your circuit to a file so that you can run"
-                               " this simulation again without drawing a new schematic."
-                               " Leave these fields blank to skip saving.", this);
-    label->setWordWrap(true);
-
-    nameLineEdit = new QLineEdit(this);
-
-    QWidget *browser = new QWidget(this);
-    saveDirLineEdit = new QLineEdit(this);
-    QPushButton *browseButton = new QPushButton("Browse", this);
-    QHBoxLayout *browserLayout = new QHBoxLayout;
-
-    connect(browseButton, &QPushButton::pressed,
-            [=](){ saveDirLineEdit->setText( QFileDialog::getExistingDirectory(
-                                                 browser,
-                                                 "Choose save directory",
-                                                 "/home/srobertson",
-                                                 QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-                                                 )); });
-
-    browserLayout->addWidget(saveDirLineEdit);
-    browserLayout->addWidget(browseButton);
-    browser->setLayout(browserLayout);
-
-    QWidget *filename = new QWidget(this);
-    filenameLineEdit = new QLineEdit(this);
-    QLabel *ext = new QLabel(".cir", this);
-    QHBoxLayout *filenameLayout = new QHBoxLayout;
-    filenameLayout->addWidget(filenameLineEdit);
-    filenameLayout->addWidget(ext);
-    filename->setLayout(filenameLayout);
-
-    QFormLayout *layout = new QFormLayout;
-    layout->addRow(label);
-    layout->addRow("Model name: ", nameLineEdit);
-    layout->addRow("Choose directory to save circuit in: ", browser);
-    layout->addRow("Save circuit as: ", filename);
-    layout->setRowWrapPolicy(QFormLayout::WrapAllRows);
-
+    QLabel *text = new QLabel("This will be the graphing options page", this);
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(text);
     page->setLayout(layout);
     return page;
 }
 
+int SimulationWizard::nextId() const
+{
+    switch(currentId())
+    {
+    case Page_Intro:
+        if (field("parseCircuit").toBool())
+            return Page_SimOptions;
+        return Page_RunSim;
+
+    case Page_SimOptions:
+        return Page_InitialConds;
+    case Page_InitialConds:
+        return Page_SaveAs;
+    case Page_SaveAs:
+        if (saveOnly) return -1;
+        return Page_RunSim;
+
+    case Page_RunSim:
+        return Page_GraphOptions;
+
+    case Page_GraphOptions:
+    default:
+        return -1;
+    }
+}
+
 void SimulationWizard::processInput()
 {
-    netlist->setName(nameLineEdit->text());
-    netlist->setAnalysis(simulationTypeComboBox->currentText(), "0.01", "ms", "5", "s");
-//    for (int i = 0; i < initialConditionLabels.length(); i++){
-//        if (initialConditionLineEdits[i]->text() != "")
-//            netlist->addInitialCondition(initialConditionLabels[i]->text(), initialConditionLineEdits[i]->text());
-//    }
+    if (field("loadCircuit").toBool()) return;
+    netlist->setName(field("circuitName").toString());
+    netlist->setAnalysis(
+                simulationTypeComboBox->currentText(),
+                stepLineEdit->text(), stepUnits->currentText() + "s",
+                durationLineEdit->text(),
+                durUnits->currentText() + "s");
+    for (int i = 0; i < nodeNames.length(); i++){
+        if (initialConditionLineEdits[i]->text() != "")
+            netlist->addInitialCondition(nodeNames[i], initialConditionLineEdits[i]->text());
+    }
+    filename = field("saveDir").toString() + "/" + field("saveFilename").toString() + ".cir";
 }

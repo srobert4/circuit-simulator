@@ -4,9 +4,14 @@
 Netlist::Netlist(const QString &name, QObject *parent) : QObject(parent)
 {
     this->setName(name);
+    fileReady = false;
 }
 
 void Netlist::setName(const QString &name) { this->name = name; }
+void Netlist::setFilename(const QString &filename) {
+    this->filename = filename;
+    fileReady = true;
+}
 
 int Netlist::addElement(
         const QString &element,
@@ -123,6 +128,7 @@ void Netlist::writeToFile(const QString &filename)
         file.close();
     }
     this->filename = filename;
+    fileReady = true;
 }
 
 QString Netlist::getCommand()

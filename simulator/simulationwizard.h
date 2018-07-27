@@ -3,26 +3,29 @@
 
 #include <QtWidgets>
 #include "netlist.h"
+#include "savewizardpage.h"
+#include "introwizardpage.h"
+#include "simulatewizardpage.h"
 
 class SimulationWizard : public QWizard
 {
     Q_OBJECT
 public:
-    explicit SimulationWizard(Netlist *netlist, QWidget *parent = nullptr);
+    enum { Page_Intro, Page_SimOptions, Page_InitialConds, Page_SaveAs,
+           Page_RunSim, Page_GraphOptions };
+
+    explicit SimulationWizard(Netlist *netlist, bool runSimulation, QWidget *parent = nullptr);
     void processInput();
-    QString getFilename() {return (filenameLineEdit->text() + ".cir");}
+    QString getFilename() { return filename; }
 
 private:
     Netlist *netlist;
+    QString filename;
+    bool saveOnly;
 
-    QWizardPage *createSimulationPage();
-    QWizardPage *createInitialCondPage();
-    QWizardPage *createSavePage();
+    void createIntroPage();
 
-
-    QLineEdit *nameLineEdit;
-    QLineEdit *saveDirLineEdit;
-    QLineEdit *filenameLineEdit;
+    QWizardPage *createSimOptionsPage();
     QComboBox *simulationTypeComboBox;
     QList<QString> simulationTypes = {
         "",
@@ -37,7 +40,17 @@ private:
     };
     QComboBox *stepUnits;
     QComboBox *durUnits;
+
+    QWizardPage *createInitialCondPage();
+    QVector<QString> nodeNames;
     QVector<QLineEdit *> initialConditionLineEdits;
+
+    QWizardPage *createSimulationPage();
+
+    QWizardPage *createGraphOptionsPage();
+
+    int nextId() const override;
+
 
 signals:
 
