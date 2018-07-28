@@ -32,7 +32,8 @@ int Netlist::addElement(
 
     // add boundary conditions if necessary
     if (externalFilename != "") {
-        boundaryConditions[element + name] = externalFilename;
+        BoundaryCondition *bc = new BoundaryCondition(externalFilename, 1.0, this);
+        boundaryConditions[element + name] = bc;
     }
     elementNames.insert(element + name);
     nodeNames.insert(nodeIn);
@@ -50,7 +51,8 @@ int Netlist::addElement(CircuitElement *element, int nodeIn, int nodeOut)
     QString line = element->getName() + " " + QString::number(nodeIn) + " " + QString::number(nodeOut);
     if (element->getExternalFile() != "") {
         line += " external";
-        boundaryConditions[element->getName()] = element->getExternalFile();
+        BoundaryCondition *bc = new BoundaryCondition(element->getExternalFile(), element->getPeriod(), this);
+        boundaryConditions[element->getName()] = bc;
     } else {
         line += (" " + element->getValue());
     }
@@ -129,13 +131,4 @@ void Netlist::writeToFile(const QString &filename)
     }
     this->filename = filename;
     fileReady = true;
-}
-
-QString Netlist::getCommand()
-{
-    QString command =  "./main " + filename + " ";
-    for (QString node : boundaryConditions)
-        command += (node + "=" + boundaryConditions[node]);
-    command += "\"" + graphingCommand + "\"";
-    return command;
 }

@@ -9,11 +9,11 @@ SaveWizardPage::SaveWizardPage(QWidget *parent) : QWizardPage(parent)
     label->setWordWrap(true);
 
     nameLineEdit = new QLineEdit(this);
-    registerField("circuitName", nameLineEdit);
+    registerField("circuitName*", nameLineEdit);
 
     QWidget *browser = new QWidget(this);
     saveDirLineEdit = new QLineEdit(this);
-    registerField("saveDir", saveDirLineEdit);
+    registerField("saveDir*", saveDirLineEdit);
     QPushButton *browseButton = new QPushButton("Browse", this);
     QHBoxLayout *browserLayout = new QHBoxLayout;
 
@@ -31,7 +31,7 @@ SaveWizardPage::SaveWizardPage(QWidget *parent) : QWizardPage(parent)
 
     QWidget *filename = new QWidget(this);
     filenameLineEdit = new QLineEdit(this);
-    registerField("saveFilename", filenameLineEdit);
+    registerField("saveFilename*", filenameLineEdit);
     QLabel *ext = new QLabel(".cir", this);
     QHBoxLayout *filenameLayout = new QHBoxLayout;
     filenameLayout->addWidget(filenameLineEdit);
@@ -45,6 +45,11 @@ SaveWizardPage::SaveWizardPage(QWidget *parent) : QWizardPage(parent)
     layout->addRow("Save circuit as: ", filename);
     layout->setRowWrapPolicy(QFormLayout::WrapAllRows);
 
+    connect(browseButton, &QPushButton::pressed, [this](){ emit completeChanged(); });
+    connect(nameLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
+    connect(filenameLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
+    connect(saveDirLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
+
     setLayout(layout);
 }
 
@@ -54,4 +59,10 @@ bool SaveWizardPage::validatePage() {
     if (!QDir(saveDirLineEdit->text()).exists()) return false;
     emit ready();
     return true;
+}
+
+bool SaveWizardPage::isComplete() const {
+    if (saveDirLineEdit->text() == "" ||
+            filenameLineEdit->text() == "") return false;
+    return QDir(saveDirLineEdit->text()).exists();
 }

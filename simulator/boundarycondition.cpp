@@ -1,66 +1,45 @@
-/*
-boundarycondition.cc
---------------------
-Implement Boundary Condition class
-*/
-
-#include <iostream>
-#include <fstream>
-#include <cmath>
-
 #include "boundarycondition.h"
 
-BoundaryCondition::BoundaryCondition(const std::string &filename, double period)
+BoundaryCondition::BoundaryCondition(QString filename,
+                                     qreal period,
+                                     QObject *parent) : QObject(parent)
 {
     this->period = period;
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return;
 
-    // TODO: Error checking
-
-    std::ifstream f(filename);
-    char line[256];
-    while(true) {
-        // read file
-        f.getline(line, 256);
-        if(f.eof()) break;
-
-        // parse time and pressure
-        std::string::size_type sz;
-        double t = stod(std::string(line), &sz);
-        double p = stod(std::string(line).substr(sz));
-
-        // add to boundary conditions map
-        this->conditions[t] = p;
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        QStringList tokens = line.split("\\s+");
+        if (tokens.length() != 2) {
+            emit badFile();
+            return;
+        }
+        states[tokens[0].toInt()] = tokens[1].toInt();
     }
-
 }
 
-BoundaryCondition::~BoundaryCondition() {}
-
-double BoundaryCondition::get_state(double time)
+double BoundaryCondition::getState(double time)
 {
-    std::map<double, double>::iterator high, low;
+    QMap<qreal, qreal>::iterator high, low;
+    time = fmod(time, period);
+    high = states.lowerBound(time);
+    low = (high == states.begin() ? high : high--);
 
-    time = std::fmod(time, this->period);
-    high = this->conditions.lower_bound(time);
-    low = (high == this->conditions.begin() ? high : high--);
-
-    return this->interpolate(low->first, high->first, low->second, high->second, time);
+    return interpolate(low, high, time);
 }
 
-/* Function to compute interpolated boundary condition */
 double BoundaryCondition::interpolate(
-    double t_lower,
-    double t_upper,
-    double c_lower,
-    double c_upper,
-    double t
-)
+        QMap<qreal, qreal>::iterator low,
+        QMap<qreal, qreal>::iterator high,
+        double time)
 {
-    if (std::abs(t_upper - t) <= 1e-8)
-        return c_upper;
-
-    if (std::abs(t_lower - t) <= 1e-8)
-        return c_lower;
-
-    return c_lower + (t - t_lower)*(c_upper - c_lower)/(t_upper - t_lower);
+    if (qFabs(high.key() - time) <= 1e-8)
+        return high.value();
+    if (qFabs(low.key() - time) <= 1e-8)
+        return low.value();
+    return low.value() + (time - low.key())*
+            (high.value() - low.value())/(high.key() - low.key());
 }

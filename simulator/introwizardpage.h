@@ -12,8 +12,10 @@ public:
 signals:
     void filenameReady();
 
-private:
+protected:
     virtual bool isComplete() const override;
+
+private:
     QRadioButton *parseButton;
     QRadioButton *loadFileButton;
     QLineEdit *fileLineEdit;

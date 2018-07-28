@@ -3,6 +3,7 @@
 
 #include <QtWidgets>
 #include "circuitelement.h"
+#include "boundarycondition.h"
 
 class Netlist : public QObject
 {
@@ -36,11 +37,13 @@ public:
         const QString &time,
         const QString &timeUnits
     );
+    void setAnalysis(QString line) { analysis = line; }
+    void setInitialConditions(QString line) { initialConditions.append(line); }
 
     void writeToFile(const QString &filename);
-    QString getCommand();
     QSet<QString> getElementNames() { return elementNames; }
     QSet<QString> getNodeNames() { return nodeNames; }
+    double getBoundaryPressure(char *node, double time) { return boundaryConditions[node]->getState(time); }
     bool ready() {return fileReady;}
 
 private:
@@ -51,7 +54,7 @@ private:
     QString analysis;
     QString filename;
     QString graphingCommand;
-    QMap<QString, QString> boundaryConditions;
+    QMap<QString, BoundaryCondition *> boundaryConditions;
     bool fileReady;
 };
 

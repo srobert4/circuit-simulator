@@ -1,24 +1,33 @@
 #include "simulatewizardpage.h"
 
-simulateWizardPage::simulateWizardPage(QWidget *parent) : QWizardPage(parent)
+SimulateWizardPage::SimulateWizardPage(QWidget *parent) : QWizardPage(parent)
 {
     setTitle("Run your simulation");
-    QLabel *text = new QLabel("This will be the simulation page", this);
-    layout = new QVBoxLayout;
-    layout->addWidget(text);
-    setLayout(layout);
-}
+    QPushButton *runButton = new QPushButton("Click to Start Simulation", this);
 
-void simulateWizardPage::initializePage()
-{
-    QString filename;
-    if (field("loadCircuit").toBool()) {
-        filename = field("filename").toString();
-    } else {
-        filename = field("saveDir").toString() + "/" +
-                field("saveFilename").toString() + ".cir";
-    }
-    QLabel *label = new QLabel(filename, this);
-    layout->addWidget(label);
-    // initialise spiceengine with file
+    QWidget *progressWidget = new QWidget(this);
+    QProgressBar *progressBar = new QProgressBar(this);
+    QPushButton *cancelButton = new QPushButton("Cancel", this);
+    QHBoxLayout *progressLayout = new QHBoxLayout;
+    progressLayout->addWidget(progressBar);
+    progressLayout->addWidget(cancelButton);
+    progressWidget->setLayout(progressLayout);
+    progressWidget->setHidden(true);
+
+    connect(runButton, &QPushButton::pressed, [=](){
+        runButton->setHidden(true);
+        progressWidget->setVisible(true);
+        runSimulation();
+    });
+    connect(cancelButton, &QPushButton::pressed, [=](){
+        runButton->setVisible(true);
+        progressWidget->setHidden(true);
+        cancelSimulation();
+    });
+
+
+    layout = new QVBoxLayout;
+    layout->addWidget(runButton);
+    layout->addWidget(progressWidget);
+    setLayout(layout);
 }

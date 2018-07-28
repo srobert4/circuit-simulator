@@ -27,7 +27,7 @@ public:
 
     void simulatePressed() { simulate(); }
     void deletePressed() { deleteSelection(); }
-    void clearPressed() { clear(); }
+    void clearPressed() { deleteAll(); }
     void savePressed() { simulate(true); }
 
 protected:
@@ -78,6 +78,7 @@ private:
     QPointF gridPos(QPointF point);
     QPointF gridPos(qreal x, qreal y);
     void deleteSelection();
+    void deleteAll();
 };
 
 #endif // SCHEMATIC_H

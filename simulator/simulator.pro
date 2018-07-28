@@ -35,7 +35,11 @@ SOURCES += \
     simulationwizard.cpp \
     savewizardpage.cpp \
     introwizardpage.cpp \
-    simulatewizardpage.cpp
+    simulatewizardpage.cpp \
+    simoptionswizardpage.cpp \
+    icwizardpage.cpp \
+    simresultswizardpage.cpp \
+    spiceengine.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -49,7 +53,17 @@ HEADERS += \
     simulationwizard.h \
     savewizardpage.h \
     introwizardpage.h \
-    simulatewizardpage.h
+    simulatewizardpage.h \
+    simoptionswizardpage.h \
+    icwizardpage.h \
+    simresultswizardpage.h \
+    spiceengine.h
 
 RESOURCES += \
     images.qrc
+
+INCLUDEPATH += /usr/local/include/ngspice
+DEPENDPATH += /usr/local/include/ngspice
+
+LIBS += -L/usr/local/lib -lngspice
+

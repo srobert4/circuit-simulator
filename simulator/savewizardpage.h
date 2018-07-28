@@ -13,6 +13,7 @@ public:
 
 protected:
     virtual bool validatePage() override;
+    virtual bool isComplete() const override;
 
 private:
     QLineEdit *nameLineEdit;

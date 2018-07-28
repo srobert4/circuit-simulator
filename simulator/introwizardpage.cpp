@@ -7,6 +7,7 @@ IntroWizardPage::IntroWizardPage(QWidget *parent) : QWizardPage(parent)
     QLabel *text = new QLabel("Welcome to the circuit simulation wizard. Would you "
                               "like to use the circuit you have drawn or load a "
                               "previously saved circuit?", this);
+    text->setWordWrap(true);
 
     QButtonGroup *answer = new QButtonGroup(this);
     parseButton = new QRadioButton("Use this circuit", this);

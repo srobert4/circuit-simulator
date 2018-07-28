@@ -1,28 +1,33 @@
 #ifndef BOUNDARYCONDITION_H
 #define BOUNDARYCONDITION_H
-/*
-BoundaryCondition.h
----------
-Class to represent the boundary conditions for an element
-*/
-#include <string>
-#include <map>
 
-class BoundaryCondition
+#include <QObject>
+#include <QMap>
+#include <QFile>
+#include <QTextStream>
+#include <cmath>
+#include <QtMath>
+
+class BoundaryCondition : public QObject
 {
+    Q_OBJECT
 public:
-    BoundaryCondition(const std::string &filename, double period);
-    ~BoundaryCondition();
-
-    double get_state(double time);
-
+    explicit BoundaryCondition(QString filename, qreal period, QObject *parent = nullptr);
+    double getState(double time);
 
 private:
-    std::map<double, double> conditions;
-    double period;
+    QMap<qreal, qreal> states;
+    qreal period;
+    double interpolate(
+            QMap<qreal, qreal>::iterator low,
+            QMap<qreal, qreal>::iterator high,
+            double time);
 
-    double interpolate(double t_lower, double t_upper, double c_lower, double c_upper, double t);
 
+signals:
+    void badFile();
+
+public slots:
 };
 
 #endif // BOUNDARYCONDITION_H

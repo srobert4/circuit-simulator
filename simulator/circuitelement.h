@@ -33,7 +33,7 @@ public:
     ~CircuitElement() override;
 
     QRectF boundingRect() const override;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
 
     int width() { return _width; }
     int height() { return _height; }
@@ -48,6 +48,7 @@ public:
     QString getName() { return prefix + name; }
     QString getValue() { return value + unitMod; }
     QString getExternalFile() { return externalFile; }
+    double getPeriod() { return periodLineEdit->text().toDouble(); }
 
 protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
@@ -78,6 +79,7 @@ private:
     QLineEdit *nameLineEdit;
     QLineEdit *valueLineEdit;
     QLineEdit *valueFileLineEdit;
+    QLineEdit *periodLineEdit;
     QComboBox *unitsComboBox;
     QList<QString> unitModifiers;
     QWidget *constValueExt;

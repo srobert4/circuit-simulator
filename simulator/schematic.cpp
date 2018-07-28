@@ -265,6 +265,13 @@ void Schematic::removeNodeLabels()
     }
 }
 
+void Schematic::deleteAll()
+{
+    foreach(QGraphicsItem *item, items())
+        item->setSelected(true);
+    deleteSelection();
+}
+
 /* Private Function: deleteSelection()
  * -----------------------------------
  * Delete selected graphics items

@@ -3,16 +3,16 @@
 
 #include <QtWidgets>
 
-class simulateWizardPage : public QWizardPage
+class SimulateWizardPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit simulateWizardPage(QWidget *parent = nullptr);
-protected:
-    virtual void initializePage();
+    explicit SimulateWizardPage(QWidget *parent = nullptr);
+
 private:
     QVBoxLayout *layout;
-signals:
+    void runSimulation() {}
+    void cancelSimulation() {}
 
 public slots:
 };

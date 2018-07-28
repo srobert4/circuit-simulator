@@ -30,7 +30,10 @@ CircuitElement::CircuitElement(
     nodeTwo->setPos(QPointF(_width / 2, 0));
 
     dialogBox = nullptr;
-    if (!properties.hasLabel) return;
+    if (!properties.hasLabel) {
+        label = nullptr;
+        return;
+    }
 
     // create Dialog box
     QString mu;
@@ -106,20 +109,6 @@ void CircuitElement::rotate(qreal angle)
 {
     // rotate pixmap
     setRotation(rotation() + angle);
-    label->setRotation(-rotation());
-
-    // move label to appropriate position
-    int rot = static_cast<int>(rotation()) % 360;
-    qInfo() << rot;
-    if (rot == 0 || abs(rot) == 360) {
-        label->setPos(-label->boundingRect().width() / 2, _height / 2);
-    } else if (rot == 90 || rot == -270) {
-        label->setPos(-label->boundingRect().width() / 2, -_height / 2 - label->boundingRect().width());
-    } else if (abs(rot) == 180) {
-        label->setPos(label->boundingRect().width() / 2, -_height / 2);
-    } else if (rot == -90 || rot == 270) {
-        label->setPos(label->boundingRect().width() / 2, _height / 2 + label->boundingRect().width());
-    }
 
     // delete nodes
     QSet<Node *> nodes = nodeOne->getAllNodesSet();
@@ -139,6 +128,20 @@ void CircuitElement::rotate(qreal angle)
     nodeOne->setRotation(-rotation());
     nodeTwo->setPos(QPointF(_width / 2, 0));
     nodeTwo->setRotation(-rotation());
+
+    if (!label) return;
+    label->setRotation(-rotation());
+    // move label to appropriate position
+    int rot = static_cast<int>(rotation()) % 360;
+    if (rot == 0 || abs(rot) == 360) {
+        label->setPos(-label->boundingRect().width() / 2, _height / 2);
+    } else if (rot == 90 || rot == -270) {
+        label->setPos(-label->boundingRect().width() / 2, -_height / 2);
+    } else if (abs(rot) == 180) {
+        label->setPos(label->boundingRect().width() / 2, -_height / 2);
+    } else if (rot == -90 || rot == 270) {
+        label->setPos(label->boundingRect().width() / 2, _height / 2);
+    }
 }
 
 // ========= PRIVATE FUNCTIONS =========================
@@ -164,11 +167,14 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
     unitsComboBox->addItems(unitModifiers);
     QLabel *unitsLabel = new QLabel(units, dialog);
 
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(dialog);
     QPushButton *cancelButton = new QPushButton("Cancel", dialog);
     QPushButton *doneButton  = new QPushButton("Done", dialog);
+    buttonBox->addButton(cancelButton, QDialogButtonBox::RejectRole);
+    buttonBox->addButton(doneButton, QDialogButtonBox::AcceptRole);
     doneButton->setDefault(true);
 
-    QGridLayout *layout = new QGridLayout(dialog);
+    QGridLayout *layout = new QGridLayout;
 
     layout->addWidget(nameLabel, 0, 0);
     layout->addWidget(prefixLabel, 0, 1, Qt::AlignRight);
@@ -190,7 +196,7 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
 
         // --- CONST VALUE OPTIONS ---
         constValueExt = new QWidget(dialog);
-        QGridLayout *constValueLayout = new QGridLayout(dialog);
+        QGridLayout *constValueLayout = new QGridLayout;
         constValueLayout->addWidget(valueLineEdit, 0, 2, 1, 2);
         constValueLayout->addWidget(unitsComboBox, 0, 4);
         constValueLayout->addWidget(unitsLabel, 0, 5);
@@ -198,10 +204,15 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
 
         // --- EXTERNAL VALUE OPTIONS ---
         extValueExt = new QWidget(dialog);
-        QLabel *browserLabel = new QLabel("File containing values: ", dialog);
+        QWidget *browser = new QWidget;
+        QHBoxLayout *browserLayout = new QHBoxLayout;
         valueFileLineEdit = new QLineEdit(dialog);
         QPushButton *browseButton = new QPushButton("Browse", dialog);
-        QHBoxLayout *extValueLayout = new QHBoxLayout(dialog);
+        browserLayout->addWidget(valueFileLineEdit);
+        browserLayout->addWidget(browseButton);
+        browser->setLayout(browserLayout);
+        periodLineEdit = new QLineEdit(dialog);
+        QFormLayout *extValueLayout = new QFormLayout;
 
         connect(browseButton, &QPushButton::pressed,
                 [=](){ valueFileLineEdit->setText( QFileDialog::getOpenFileName(
@@ -210,9 +221,8 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
                                                         "/home/srobertson",
                                                         "All files (*.*)") ); });
 
-        extValueLayout->addWidget(browserLabel);
-        extValueLayout->addWidget(valueFileLineEdit);
-        extValueLayout->addWidget(browseButton);
+        extValueLayout->addRow("Input file: ", browser);
+        extValueLayout->addRow("Period: ", periodLineEdit);
         extValueExt->setLayout(extValueLayout);
 
         // --- CONNECT EXTENSIONS ---
@@ -221,10 +231,29 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
         constValueExt->hide();
         extValueExt->hide();
 
-        connect(constButton, &QRadioButton::toggled, constValueExt, &QWidget::setVisible);
-        connect(constButton, &QRadioButton::toggled, extValueExt, &QWidget::setHidden);
-        connect(externalButton, &QRadioButton::toggled, constValueExt, &QWidget::setHidden);
-        connect(externalButton, &QRadioButton::toggled, extValueExt, &QWidget::setVisible);
+        connect(constButton, &QRadioButton::toggled, [=](){
+            constValueExt->setVisible(true);
+            extValueExt->setHidden(true);
+            doneButton->setEnabled(true);
+        });
+        connect(externalButton, &QRadioButton::toggled, [=](){
+           constValueExt->setHidden(true);
+           extValueExt->setVisible(true);
+           doneButton->setEnabled(valueFileLineEdit->text() != "" &&
+                       QFile::exists(valueFileLineEdit->text()));
+        });
+        connect(valueFileLineEdit, &QLineEdit::textChanged, [=](){
+            bool periodOk;
+            periodLineEdit->text().toDouble(&periodOk);
+            doneButton->setEnabled(valueFileLineEdit->text() != "" &&
+                        QFile::exists(valueFileLineEdit->text()) && periodOk);
+        });
+        connect(periodLineEdit, &QLineEdit::textChanged, [=](){
+            bool periodOk;
+            periodLineEdit->text().toDouble(&periodOk);
+            doneButton->setEnabled(valueFileLineEdit->text() != "" &&
+                        QFile::exists(valueFileLineEdit->text()) && periodOk);
+        });
     } else {
         constValueExt = nullptr;
         extValueExt = nullptr;
@@ -280,7 +309,16 @@ void CircuitElement::processDialogInput()
     } else {
         label->setText(prefix + name + "\n" + value + unitMod + units);
     }
-    label->setPos(-label->boundingRect().width() / 2, this->boundingRect().height() / 2);
+    int rot = static_cast<int>(rotation()) % 360;
+    if (rot == 0 || abs(rot) == 360) {
+        label->setPos(-label->boundingRect().width() / 2, _height / 2);
+    } else if (rot == 90 || rot == -270) {
+        label->setPos(-label->boundingRect().width() / 2, -_height / 2);
+    } else if (abs(rot) == 180) {
+        label->setPos(label->boundingRect().width() / 2, -_height / 2);
+    } else if (rot == -90 || rot == 270) {
+        label->setPos(label->boundingRect().width() / 2, _height / 2);
+    }
 }
 
 
@@ -292,6 +330,7 @@ void CircuitElement::processDialogInput()
  */
 void CircuitElement::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
+    if (!dialogBox) return;
     setupDialog();
 
     int ret = dialogBox->exec();
