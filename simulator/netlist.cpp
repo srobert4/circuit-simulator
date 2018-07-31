@@ -27,8 +27,12 @@ int Netlist::addElement(
     if (value == "") return NoValueError;
     if (elementNames.contains(element + name)) return DuplicateNameError;
 
-    // construct element
-    QString line = element + name + " "  + nodeIn + " " + nodeOut + " " + value + units;
+    QString line = element + name + " ";
+    if (element == "V" && nodeIn == "0") {
+        line += nodeOut + " " + nodeIn + " " + value + units;
+    } else {
+        line += element + name + " "  + nodeIn + " " + nodeOut + " " + value + units;
+    }
 
     // add boundary conditions if necessary
     if (externalFilename != "") {
@@ -48,6 +52,10 @@ int Netlist::addElement(CircuitElement *element, int nodeIn, int nodeOut)
     if (element->getName().length() == 1) return NoNameError;
     if (elementNames.contains(element->getName())) return DuplicateNameError;
 
+    if (element->getName().front() == "V" && nodeIn == 0) {
+        nodeIn = nodeOut;
+        nodeOut = 0;
+    }
     QString line = element->getName() + " " + QString::number(nodeIn) + " " + QString::number(nodeOut);
     if (element->getExternalFile() != "") {
         line += " external";

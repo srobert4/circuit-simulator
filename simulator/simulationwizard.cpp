@@ -9,11 +9,11 @@ SimulationWizard::SimulationWizard(Netlist *netlist, SpiceEngine *engine, bool s
         setPage(Page_Intro, new IntroWizardPage);
     }
 
-    setPage(Page_SimOptions, new SimOptionsWizardPage(schem));
+    setPage(Page_SimOptions, new SimOptionsWizardPage(schem, netlist));
 
-    setPage(Page_InitialConds, new ICWizardPage(netlist->getNodeNames()));
+    setPage(Page_InitialConds, new ICWizardPage(netlist));
 
-    SaveWizardPage *savePage = new SaveWizardPage;
+    SaveWizardPage *savePage = new SaveWizardPage(saveOnly);
     connect(savePage, &SaveWizardPage::ready,
             [this]() {
         this->processInput();
@@ -52,7 +52,7 @@ int SimulationWizard::nextId() const
 
 void SimulationWizard::processInput()
 {
-    if (field("loadCircuit").toBool()) return;
+    if (!this->saveOnly && field("loadCircuit").toBool()) return;
     netlist->setName(field("circuitName").toString());
     netlist->setAnalysis(field("simOptions").toString());
     netlist->setInitialConditions(field("initialConditions").toString());

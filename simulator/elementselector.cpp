@@ -114,6 +114,7 @@ void ElementSelector::slotButtonPressed(int id)
 void ElementSelector::slotButtonReleased(int id)
 {
     if (deselectOnRelease) {
+        schematic->setMode(Schematic::Edit);
         deselectAll();
         deselectOnRelease = false;
         return;

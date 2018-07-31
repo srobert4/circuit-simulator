@@ -1,6 +1,6 @@
 #include "savewizardpage.h"
 
-SaveWizardPage::SaveWizardPage(QWidget *parent) : QWizardPage(parent)
+SaveWizardPage::SaveWizardPage(bool saveOnly, QWidget *parent) : QWizardPage(parent)
 {
     setTitle("Save Your Circuit");
 
@@ -50,6 +50,7 @@ SaveWizardPage::SaveWizardPage(QWidget *parent) : QWizardPage(parent)
     connect(filenameLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
     connect(saveDirLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
 
+    if (saveOnly) setButtonText(QWizard::FinishButton, "Save & Exit");
     setLayout(layout);
 }
 

@@ -383,7 +383,8 @@ void Schematic::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
  *      - move shadow
  * Draw mode:
  *      - move activeNode
- * Edit mode: nothing
+ * Edit mode:
+ *      - delete shadow if exists
  */
 void Schematic::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
@@ -407,6 +408,11 @@ void Schematic::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         activeNode->setPos(curPos);
         break;
     case Schematic::Edit:
+        if (curShadow != nullptr) {
+            removeItem(curShadow);
+            delete curShadow;
+            curShadow = nullptr;
+        }
         break;
     }
     QGraphicsScene::mouseMoveEvent(event);

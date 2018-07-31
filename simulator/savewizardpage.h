@@ -7,7 +7,7 @@ class SaveWizardPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit SaveWizardPage(QWidget *parent = nullptr);
+    explicit SaveWizardPage(bool saveOnly, QWidget *parent = nullptr);
     QString getName() {return nameLineEdit->text();}
     QString getFilename() {return saveDirLineEdit->text() + "/" + filenameLineEdit->text() + ".cir";}
 

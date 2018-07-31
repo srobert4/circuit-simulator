@@ -1,8 +1,8 @@
 #include "icwizardpage.h"
 
-ICWizardPage::ICWizardPage(QSet<QString> nodeNames, QWidget *parent) : QWizardPage(parent)
+ICWizardPage::ICWizardPage(Netlist *netlist, QWidget *parent) : QWizardPage(parent)
 {
-    this->nodes = nodeNames;
+    this->netlist = netlist;
     setTitle("Set Initial Conditions");
 
     QLabel *label = new QLabel("Each node is labelled on the schematic. For any nodes "
@@ -10,16 +10,8 @@ ICWizardPage::ICWizardPage(QSet<QString> nodeNames, QWidget *parent) : QWizardPa
                                "the pressure value in the corresponding box below.", this);
     label->setWordWrap(true);
 
-    QFormLayout *formLayout = new QFormLayout;
-    foreach(QString node, nodes) {
-        QLineEdit *line = new QLineEdit(this);
-        formLayout->addRow("Node " + node, line);
-        registerField(node, line);
-    }
-
-    QVBoxLayout *layout = new QVBoxLayout;
+    layout = new QVBoxLayout;
     layout->addWidget(label);
-    layout->addLayout(formLayout);
 
     outputLine = new QLineEdit();
     registerField("initialConditions", outputLine);
@@ -27,11 +19,23 @@ ICWizardPage::ICWizardPage(QSet<QString> nodeNames, QWidget *parent) : QWizardPa
     setLayout(layout);
 }
 
+void ICWizardPage::initializePage()
+{
+    QFormLayout *formLayout = new QFormLayout;
+    foreach(QString node, netlist->getNodeNames()) {
+        QLineEdit *line = new QLineEdit(this);
+        formLayout->addRow("Node " + node, line);
+        registerField(node, line);
+    }
+    layout->addLayout(formLayout);
+
+}
+
 
 bool ICWizardPage::validatePage()
 {
     QString line = ".ic";
-    foreach(QString node, nodes) {
+    foreach(QString node, netlist->getNodeNames()) {
         QString value = field(node).toString();
         if (value == "") continue;
         bool numName;
