@@ -2,9 +2,9 @@
 #define SPICEENGINE_H
 
 #include <QObject>
-#include <QWidget>
-#include "netlist.h"
-#include "ngspice/include/sharedspice.h"
+#include <QtWidgets>
+#include "boundarycondition.h"
+#include "/usr/local/include/ngspice/sharedspice.h"
 
 int getchar(char *outputreturn, int ident, void *userdata);
 int getstat(char *outputreturn, int ident, void *userdata);
@@ -20,22 +20,30 @@ class SpiceEngine : public QObject
 {
     Q_OBJECT
 public:
-    explicit SpiceEngine(Netlist *netlist, QObject *parent = nullptr);
-    void runSimulation(QString filename, QMap<QString, QString> bcs);
-    void cancelSimulation();
+    explicit SpiceEngine(QObject *parent = nullptr);
+    void startSimulation(QString filename, const QMap<QString, BoundaryCondition *> *bcs);
+    void emitStatusUpdate(char *status);
+    bool running() { return no_bg; }
+    void stopSimulation();
     QList<QString> getAvailableGraphs();
     void graph(QString node);
+
+    // convenience wrappers around ngspice functions
+    int command(QString command) { return ngSpice_Command((char *)command.toLatin1().data()); }
+    int run() { return ngSpice_Command((char *)"bg_run"); }
+    int halt() { return ngSpice_Command((char *)"bg_halt"); }
+    int resume() { return ngSpice_Command((char *)"bg_resume"); }
 
     bool no_bg = true;
     int vecgetnumber = 0;
     bool errorflag = false;
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-    Netlist *netlist;
-
-private:
+    QMap<QString, BoundaryCondition *> *bcs;
+    QString filename;
 
 signals:
+    void statusUpdate(int status);
 
 public slots:
 };

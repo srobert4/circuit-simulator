@@ -44,7 +44,10 @@ public:
     QSet<QString> getElementNames() { return elementNames; }
     QSet<QString> getNodeNames() { return nodeNames; }
     double getBoundaryPressure(char *node, double time) { return boundaryConditions[node]->getState(time); }
+    const QMap<QString, BoundaryCondition *> *getBoundaryConditions() { return &boundaryConditions; }
+    QString getFilename() { return filename; }
     bool ready() {return fileReady;}
+    QMap<QString, BoundaryCondition *> boundaryConditions;
 
 private:
     QString name;
@@ -54,7 +57,6 @@ private:
     QString analysis;
     QString filename;
     QString graphingCommand;
-    QMap<QString, BoundaryCondition *> boundaryConditions;
     bool fileReady;
 };
 

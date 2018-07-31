@@ -11,6 +11,7 @@ Schematic::Schematic(QObject *parent)
     curShadow = nullptr;
     simulationOptions = nullptr;
     mode = Schematic::Edit;
+    spiceEngine = new SpiceEngine(this);
 }
 
 // ============ PUBLIC FUNCTIONS ================================
@@ -139,39 +140,8 @@ void Schematic::simulate(bool saveOnly)
     if (netlist != nullptr) delete netlist;
     netlist = new Netlist();
 
-    // Parse diagram and add elements
-    int ret = parse();
-    if (ret != 0) {
-        QString errormsg;
-        switch (ret) {
-        case Schematic::NoStartError:
-            errormsg = "Your circuit must contain a starting ground element.";
-            break;
-        case Netlist::NoNameError:
-            errormsg = "All elements must be named.";
-            break;
-        case Netlist::NoValueError:
-            errormsg = "All elements must have a value assigned.";
-            break;
-        case Schematic::IncompleteError:
-            errormsg = "Incomplete circuit.";
-            break;
-        case Netlist::DuplicateNameError:
-            errormsg = "Duplicate element names. All element names must be unique.";
-            break;
-        case -1:
-            errormsg = "Unknown error occurred.";
-        }
-        QMessageBox *box = new QMessageBox(QMessageBox::Critical, "Parsing Error", errormsg);
-        box->exec();
-        delete box;
-        removeNodeLabels();
-        return;
-
-    }
-
     // Show options dialog box
-    simulationOptions = new SimulationWizard(netlist, saveOnly);
+    simulationOptions = new SimulationWizard(netlist, spiceEngine, saveOnly, this);
     simulationOptions->exec();
 
     delete simulationOptions;
@@ -292,6 +262,42 @@ void Schematic::deleteSelection()
         removeItem(item);
         delete item;
     }
+}
+
+// ============= SLOTS =========================================
+
+void Schematic::parseSchematic()
+{
+    // Parse diagram and add elements
+    int ret = parse();
+    if (ret != 0) {
+        QString errormsg;
+        switch (ret) {
+        case Schematic::NoStartError:
+            errormsg = "Your circuit must contain a starting ground element.";
+            break;
+        case Netlist::NoNameError:
+            errormsg = "All elements must be named.";
+            break;
+        case Netlist::NoValueError:
+            errormsg = "All elements must have a value assigned.";
+            break;
+        case Schematic::IncompleteError:
+            errormsg = "Incomplete circuit.";
+            break;
+        case Netlist::DuplicateNameError:
+            errormsg = "Duplicate element names. All element names must be unique.";
+            break;
+        case -1:
+            errormsg = "Unknown error occurred.";
+        }
+        QMessageBox *box = new QMessageBox(QMessageBox::Critical, "Parsing Error", errormsg);
+        box->exec();
+        delete box;
+        removeNodeLabels();
+        simulationOptions->close();
+    }
+    emit parseComplete();
 }
 
 // ============= EVENT HANDLERS ================================

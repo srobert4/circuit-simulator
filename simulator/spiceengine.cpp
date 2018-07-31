@@ -1,11 +1,45 @@
 #include "spiceengine.h"
 
-SpiceEngine::SpiceEngine(Netlist *netlist, QObject *parent) : QObject(parent)
+SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
-    this->netlist = netlist;
-    int ret = ngSpice_Init(getchar, getstat, ng_exit, NULL, initdata, thread_runs, this);
+    int ret;
+    ret = ngSpice_Init(getchar, getstat, ng_exit, NULL, NULL, thread_runs, this);
     ret = ngSpice_Init_Sync(getvoltage, NULL, NULL, NULL, this);
 }
+
+void SpiceEngine::startSimulation(QString filename, const QMap<QString, BoundaryCondition *> *bcs)
+{
+    int ret;
+    ret = command("source " + filename);
+    pthread_mutex_lock(&mutex);
+    ret = run();
+    // wait for background thread to start
+    while(no_bg) {
+        pthread_cond_wait(&cond, &mutex);
+    }
+    pthread_mutex_unlock(&mutex);
+}
+
+void SpiceEngine::stopSimulation()
+{
+    if (no_bg) return;
+    halt(); // note: halt will not return until no_bg == true
+}
+
+void SpiceEngine::emitStatusUpdate(char *status)
+{
+    QString line = QString(status);
+    QStringList tokens = line.split(" ");
+    if (tokens.length() < 2) {
+        if (tokens[0] == "--ready--")
+            emit statusUpdate(100);
+        return;
+    }
+    qreal stat = tokens[1].left(tokens[1].length() - 1).toDouble();
+    if (stat != 0.0) emit statusUpdate((int)stat);
+}
+
+// ============= NGSPICE CALLBACK FUNCTIONS ======================
 
 /* Callback function called from bg thread in ngspice to transfer
 any string created by printf or puts. Output to stdout in ngspice is
@@ -14,8 +48,6 @@ int getchar(char* outputreturn, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = (SpiceEngine *)userdata;
-    printf("%s\n", outputreturn);
-    /* setting a flag if an error message occurred */
     if (ciprefix("stderr Error:", outputreturn))
         engine->errorflag = true;
     return 0;
@@ -25,8 +57,8 @@ int getchar(char* outputreturn, int ident, void* userdata)
 int getstat(char* outputreturn, int ident, void* userdata)
 {
     Q_UNUSED(ident);
-    Q_UNUSED(userdata);
-    printf("%s\n", outputreturn);
+    SpiceEngine *engine = (SpiceEngine *)userdata;
+    engine->emitStatusUpdate(outputreturn);
     return 0;
 }
 
@@ -36,32 +68,8 @@ int thread_runs(bool noruns, int ident, void* userdata)
     SpiceEngine *engine = (SpiceEngine *)userdata;
     pthread_mutex_lock(&engine->mutex);
     engine->no_bg = noruns;
-    if (noruns) {
-        pthread_cond_signal(&engine->cond);
-        printf("bg not running\n");
-    } else {
-        pthread_cond_signal(&engine->cond);
-        printf("bg running\n");
-    }
+    pthread_cond_signal(&engine->cond);
     pthread_mutex_unlock(&engine->mutex);
-    return 0;
-}
-
-
-/* Callback function called from bg thread in ngspice once upon intialization
-   of the simulation vectors)*/
-int initdata(pvecinfoall intdata, int ident, void* userdata)
-{
-    Q_UNUSED(ident);
-    SpiceEngine *engine = (SpiceEngine *)userdata;
-    int i;
-    int vn = intdata->veccount;
-    for (i = 0; i < vn; i++) {
-        printf("Vector: %s\n", intdata->vecs[i]->vecname);
-        /* find the location of V(2) */
-        if (cieq(intdata->vecs[i]->vecname, (char*) "V(2)"))
-            engine->vecgetnumber = i;
-    }
     return 0;
 }
 
@@ -85,7 +93,7 @@ int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* user
         printf("DNote: Unloading ngspice is not possible\n");
         printf("DNote: Can we recover? Send 'quit' command to ngspice.\n");
         engine->errorflag = true;
-        //ngSpice_Command( (char*) "quit 5");
+        ngSpice_Command( (char*) "quit 5");
     }
 
     return exitstatus;
@@ -95,7 +103,7 @@ int getvoltage(double* voltage, double t, char* node, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = (SpiceEngine *)userdata;
-    *voltage = engine->netlist->getBoundaryPressure(node, t);
+    *voltage = engine->bcs->value(node)->getState(t);
     return 0;
 }
 

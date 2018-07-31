@@ -7,13 +7,15 @@ class SimOptionsWizardPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit SimOptionsWizardPage(QWidget *parent = nullptr);
+    explicit SimOptionsWizardPage(QGraphicsScene *schem, QWidget *parent = nullptr);
 
 protected:
 //    virtual bool isComplete() const override;
     virtual bool validatePage() override;
+    virtual void initializePage() override;
 
 private:
+    QGraphicsScene *schematic;
     QLineEdit *outputLine;
 
     QList<QString> simulationTypes = {
@@ -29,6 +31,7 @@ private:
     };
 
 signals:
+    void parseSchematic();
 
 public slots:
 };

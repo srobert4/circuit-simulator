@@ -10,6 +10,7 @@
 #include "node.h"
 #include "netlist.h"
 #include "simulationwizard.h"
+#include "spiceengine.h"
 
 class Schematic : public QGraphicsScene
 {
@@ -29,7 +30,6 @@ public:
     void deletePressed() { deleteSelection(); }
     void clearPressed() { deleteAll(); }
     void savePressed() { simulate(true); }
-
 protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
@@ -38,6 +38,10 @@ protected:
 
 signals:
     void schematicClicked(); // -> (MainWindow) slotSchematicClicked()
+    void parseComplete();
+
+public slots:
+    void parseSchematic();
 
 private:
     Mode mode;
@@ -56,10 +60,11 @@ private:
     Node *startNode;
     Node *activeNode;
 
-    // Netlist
+    // Netlist & Simulator
     Netlist *netlist;
     QString netlistFilename;
     SimulationWizard *simulationOptions;
+    SpiceEngine *spiceEngine;
 
     // Parsing
     void simulate(bool saveOnly = false);

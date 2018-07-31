@@ -16,7 +16,11 @@ class SimulationWizard : public QWizard
 public:
     enum { Page_Intro, Page_SimOptions, Page_InitialConds, Page_SaveAs, Page_RunSim };
 
-    explicit SimulationWizard(Netlist *netlist, bool runSimulation, QWidget *parent = nullptr);
+    explicit SimulationWizard(Netlist *netlist,
+                              SpiceEngine *engine,
+                              bool saveOnly,
+                              QGraphicsScene *schem,
+                              QWidget *parent = nullptr);
     void processInput();
     QString getFilename() { return filename; }
 

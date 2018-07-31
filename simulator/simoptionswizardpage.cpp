@@ -1,7 +1,9 @@
 #include "simoptionswizardpage.h"
 
-SimOptionsWizardPage::SimOptionsWizardPage(QWidget *parent) : QWizardPage(parent)
+SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, QWidget *parent) : QWizardPage(parent)
 {
+    schematic = schem;
+    connect(this, SIGNAL(parseSchematic()), schematic, SLOT(parseSchematic()));
     setTitle("Set Simulation Mode");
 
     QComboBox *simulationTypeComboBox = new QComboBox(this);
@@ -27,6 +29,14 @@ SimOptionsWizardPage::SimOptionsWizardPage(QWidget *parent) : QWizardPage(parent
     registerField("simOptions", outputLine);
 
     setLayout(layout);
+}
+
+void SimOptionsWizardPage::initializePage()
+{
+    emit parseSchematic();
+    QEventLoop loop;
+    connect(schematic, SIGNAL(parseComplete()), &loop, SLOT(quit()));
+    loop.exec(); // wait for parsing to finish
 }
 
 QWidget *SimOptionsWizardPage::createTranExtension()

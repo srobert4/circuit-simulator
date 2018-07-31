@@ -1,6 +1,6 @@
 #include "simulationwizard.h"
 
-SimulationWizard::SimulationWizard(Netlist *netlist, bool saveOnly, QWidget *parent) : QWizard(parent)
+SimulationWizard::SimulationWizard(Netlist *netlist, SpiceEngine *engine, bool saveOnly, QGraphicsScene *schem, QWidget *parent) : QWizard(parent)
 {
     this->netlist = netlist;
     this->saveOnly = saveOnly;
@@ -9,7 +9,7 @@ SimulationWizard::SimulationWizard(Netlist *netlist, bool saveOnly, QWidget *par
         setPage(Page_Intro, new IntroWizardPage);
     }
 
-    setPage(Page_SimOptions, new SimOptionsWizardPage);
+    setPage(Page_SimOptions, new SimOptionsWizardPage(schem));
 
     setPage(Page_InitialConds, new ICWizardPage(netlist->getNodeNames()));
 
@@ -21,7 +21,7 @@ SimulationWizard::SimulationWizard(Netlist *netlist, bool saveOnly, QWidget *par
     });
     setPage(Page_SaveAs, savePage);
 
-    setPage(Page_RunSim, new SimulateWizardPage);
+    setPage(Page_RunSim, new SimulateWizardPage(engine, netlist));
 
     setWindowTitle("Simulation Wizard");
     show();
