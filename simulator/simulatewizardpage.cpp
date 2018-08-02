@@ -30,7 +30,6 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     progressWidget->setHidden(true);
 
     resultsLabel = new QLabel(this);
-    resultsLayout = new QGridLayout;
 
     connect(runButton, &QPushButton::pressed, [=](){
         runWidget->setHidden(true);
@@ -66,7 +65,6 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     layout->addWidget(runWidget);
     layout->addWidget(progressWidget);
     layout->addWidget(resultsLabel);
-    layout->addLayout(resultsLayout);
     setLayout(layout);
 }
 
@@ -90,114 +88,185 @@ void SimulateWizardPage::cancelSimulation()
 
 void SimulateWizardPage::showResults()
 {
-    for (int i = 0; i < vectors.length(); i++) {
-        QString vector = vectors[i];
-        if (vector == "time") continue;
-        QCheckBox *vectorCheckbox = new QCheckBox(this);
+    plotButton->setEnabled(true);
+    saveButton->setEnabled(true);
+}
 
-        connect(vectorCheckbox, &QCheckBox::stateChanged, [=](int state){
-            selectedVectors[vector] = (state == Qt::Checked);
-        });
+QWidget *SimulateWizardPage::getPlotWidget()
+{
+    QWidget *plotWidget = new QWidget;
+    QVBoxLayout *plotLayout = new QVBoxLayout;
 
-        resultsLayout->addWidget(vectorCheckbox, i, 1);
-    }
+    // save question
+    QHBoxLayout *saveLayout = new QHBoxLayout;
+    saveLayout->addWidget(new QLabel("Save plot? ", this));
+    QButtonGroup *saveButtons = new QButtonGroup(this);
+    QRadioButton *yesButton = new QRadioButton("Yes", this);
+    yesButton->setChecked(true);
+    registerField("savePlot", yesButton);
+    saveButtons->addButton(yesButton);
+    saveLayout->addWidget(yesButton);
+    QRadioButton *noButton = new QRadioButton("No", this);
+    saveButtons->addButton(noButton);
+    saveLayout->addWidget(noButton);
+    saveLayout->addStretch(1);
 
+
+    // save options
+    QWidget *saveOptionsWidget = new QWidget(plotWidget);
+    QVBoxLayout *saveOptionsLayout = new QVBoxLayout;
+    connect(yesButton, &QRadioButton::toggled, saveOptionsWidget, &QWidget::setVisible);
+    connect(noButton, &QRadioButton::toggled, saveOptionsWidget, &QWidget::setHidden);
+
+    // file name
+    QHBoxLayout *filenameLayout = new QHBoxLayout;
+    filenameLayout->addWidget(new QLabel("Save as:", this));
+    QLineEdit *filenameLineEdit = new QLineEdit(defaultFilename, this);
+    registerField("plotFilename", filenameLineEdit);
+    QPushButton *browseButton = new QPushButton("Browse", this);
+    filenameLayout->addWidget(filenameLineEdit, 1);
+    filenameLayout->addWidget(browseButton);
+
+    connect(browseButton, &QPushButton::pressed,
+            [=](){ filenameLineEdit->setText( QFileDialog::getOpenFileName(
+                                                 saveOptionsWidget,
+                                                 "Choose file",
+                                                 "/home/srobertson",
+                                                  "All files")); });
+    // file type
+    QHBoxLayout *formatLayout = new QHBoxLayout;
+    formatLayout->addWidget(new QLabel("Format:"));
+    QComboBox *plotFormat = new QComboBox(this);
+    plotFormat->addItems({"PNG", "Postscript"});
+    registerField("plotFormat", plotFormat, "currentText");
+    formatLayout->addWidget(plotFormat);
+    formatLayout->addStretch(1);
+
+    saveOptionsLayout->addLayout(filenameLayout);
+    saveOptionsLayout->addLayout(formatLayout);
+    saveOptionsWidget->setLayout(saveOptionsLayout);
+
+    // plot button
     plotButton = new QPushButton("Plot", this);
+    plotButton->setEnabled(false);
     connect(plotButton, &QPushButton::released, this, &SimulateWizardPage::plot);
+
+    // overall layout
+    plotLayout->addLayout(saveLayout);
+    plotLayout->addWidget(saveOptionsWidget);
+    plotLayout->addWidget(plotButton, 0, Qt::AlignCenter);
+
+    plotWidget->setLayout(plotLayout);
+    return plotWidget;
+}
+
+QWidget *SimulateWizardPage::getSaveWidget()
+{
+    QWidget *saveWidget = new QWidget;
+    QVBoxLayout *saveLayout = new QVBoxLayout;
+
+    // filename
+    QHBoxLayout *filenameLayout = new QHBoxLayout;
+    filenameLayout->addWidget(new QLabel("Save as:", this));
+    QLineEdit *filenameLineEdit = new QLineEdit(defaultFilename + "_out.raw", this);
+    registerField("saveResultsFilename", filenameLineEdit);
+    QPushButton *browseButton = new QPushButton("Browse", this);
+    filenameLayout->addWidget(filenameLineEdit, 1);
+    filenameLayout->addWidget(browseButton);
+
+    connect(browseButton, &QPushButton::pressed,
+            [=](){ filenameLineEdit->setText( QFileDialog::getOpenFileName(
+                                                 saveWidget,
+                                                 "Choose file",
+                                                 "/home/srobertson",
+                                                  "All files")); });
+    // format
+    QHBoxLayout *formatLayout = new QHBoxLayout;
+    formatLayout->addWidget(new QLabel("Format:"));
+    QComboBox *saveFormat = new QComboBox(this);
+    saveFormat->addItems({"Compact Binary", "ASCII"});
+    registerField("saveFormat", saveFormat, "currentText");
+    formatLayout->addWidget(saveFormat);
+    formatLayout->addStretch(1);
+
+    // save button
     saveButton = new QPushButton("Save", this);
+    saveButton->setEnabled(false);
     connect(saveButton, &QPushButton::released, this, &SimulateWizardPage::save);
 
-    QHBoxLayout *buttonLayout = new QHBoxLayout;
-    buttonLayout->addWidget(plotButton);
-    buttonLayout->addWidget(saveButton);
-    buttonLayout->addStretch(1);
-    layout->addLayout(buttonLayout);
+    // layout
+    saveLayout->addLayout(filenameLayout);
+    saveLayout->addLayout(formatLayout);
+    saveLayout->addWidget(saveButton, 0, Qt::AlignCenter);
+    saveWidget->setLayout(saveLayout);
+    return saveWidget;
 }
 
 void SimulateWizardPage::save()
 {
-    // Get filename
-    bool ok;
-    QString filename = defaultFilename + "_out.raw";
-    QString text = QInputDialog::getText(this, "Save as",
-                                         "Save as:", QLineEdit::Normal,
-                                         filename, &ok);
-    if (ok && !text.isEmpty())
-        filename = text;
-
-     // Get format
-    bool bin = true;
-    QStringList formats;
-    formats << "Binary" << "ASCII";
-    QString format = QInputDialog::getItem(this, tr("Output Format"),
-                                           tr("Format:"), formats, 0, false, &ok);
-    if (ok && !format.isEmpty())
-        bin = format == "PNG";
-
-    saveButton->setText("Saving...");
-    update();
-    QApplication::processEvents();
     QList<QString> toWrite;
     for (int i = 0; i < selectedVectors.size(); i++) {
         if (selectedVectors.values()[i])
             toWrite.append(selectedVectors.keys()[i]);
     }
-    engine->saveResults(toWrite, bin, filename);
+    if (toWrite.empty()) {
+        int ret = QMessageBox::question(this, "Save all?", "No vectors selected. Save all vectors?",
+                                        (QMessageBox::Yes | QMessageBox::Cancel));
+        if (ret == QMessageBox::Cancel) return;
+    }
+
+    saveButton->setText("Saving...");
+    update();
+    QApplication::processEvents();
+    engine->saveResults(toWrite, field("saveFormat").toString() == "Compact Binary", field("saveResultsFilename").toString());
     QMessageBox::information(this, "Save successful", "Your results have been saved!");
+
     saveButton->setText("Save");
 }
 
-
 void SimulateWizardPage::plot()
 {
-    int ret = QMessageBox::question(this,
-                                    "Save?",
-                                    "Save this plot? \nSaving this plot will save three files: "
-                                    "a .plt file containing gnuplot commands, a"
-                                    " .data file containing the raw data and a .eps OR .png"
-                                    " file containing the plot.",
-                                    (QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel));
-    if (ret == QMessageBox::Cancel) return;
-    bool pngOut;
-    QString filename;
-    if (ret == QMessageBox::Yes) {
-        // Get filename
-        bool ok;
-        QString text = QInputDialog::getText(this, "Save as",
-                                             "Save as:", QLineEdit::Normal,
-                                             defaultFilename, &ok);
-        if (ok && !text.isEmpty())
-            filename = text;
-
-         // Get format
-        QStringList formats;
-        formats << "Postscript" << "PNG";
-        QString format = QInputDialog::getItem(this, tr("Output Format"),
-                                                tr("Format:"), formats, 0, false, &ok);
-           if (ok && !format.isEmpty())
-               pngOut = format == "PNG";
-    }
-
-    plotButton->setText("Loading plot...");
-    update();
-    QApplication::processEvents();
     QList<QString> toPlot;
     for (int i = 0; i < selectedVectors.size(); i++) {
         if (selectedVectors.values()[i])
             toPlot.append(selectedVectors.keys()[i]);
     }
-    filename = (ret == QMessageBox::Yes ? defaultFilename : "/tmp/gnuout");
-    engine->plotResults(toPlot, pngOut, filename);
+    if (toPlot.empty()) {
+        QMessageBox::critical(this, "Error", "No vectors selected. Check the vectors you want to plot.");
+        return;
+    }
+
+    plotButton->setText("Loading plot...");
+    update();
+    QApplication::processEvents();
+
+    QString filename = (field("savePlot").toBool() ? field("plotFilename").toString() : "/tmp/gnuout");
+    if (filename.isEmpty()) filename = "/tmp/gnuout";
+    engine->plotResults(toPlot, field("plotFormat").toString() == "PNG", filename);
+
     plotButton->setText("Plot");
 }
 
 void SimulateWizardPage::initData()
 {
-    resultsLabel->setText(engine->getPlotInfo() + "\n\nVectors:\n");
+    resultsLabel->setText(engine->getPlotInfo() + "\n\nVectors:");
     vectors = engine->vectors();
-    for (int i = 0; i < vectors.size(); i++) {
-        resultsLayout->addWidget(new QLabel("    " + vectors[i], this), i, 0);
+    for (int i = 0; i < vectors.length(); i++) {
+        if (vectors[i] == "time") continue;
+        QCheckBox *vectorCheckbox = new QCheckBox("    " + vectors[i], this);
+
+        connect(vectorCheckbox, &QCheckBox::stateChanged, [=](int state){
+            selectedVectors[vectors[i]] = (state == Qt::Checked);
+        });
+
+        layout->addWidget(vectorCheckbox, i);
     }
+
+    QTabWidget *tabs = new QTabWidget(this);
+    tabs->addTab(getPlotWidget(), "Plot");
+    tabs->addTab(getSaveWidget(), "Save");
+
+    layout->addWidget(tabs);
 }
 
 void SimulateWizardPage::initializePage()

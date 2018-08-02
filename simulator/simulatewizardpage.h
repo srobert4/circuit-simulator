@@ -25,7 +25,6 @@ private:
     QProgressBar *progressBar;
     QLineEdit *dumpFilenameLineEdit;
     QLabel *resultsLabel;
-    QGridLayout *resultsLayout;
     QPushButton *saveButton;
     QPushButton *plotButton;
     bool running;
@@ -40,6 +39,9 @@ private:
     void writeVectors();
     void plot();
     void save();
+
+    QWidget *getPlotWidget();
+    QWidget *getSaveWidget();
 
 private slots:
     void updateStatus(int progress);

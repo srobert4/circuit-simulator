@@ -4,6 +4,7 @@ SimulationWizard::SimulationWizard(Netlist *netlist, SpiceEngine *engine, bool s
 {
     this->netlist = netlist;
     this->saveOnly = saveOnly;
+    resize(500, 550);
 
     if (!saveOnly) {
         setPage(Page_Intro, new IntroWizardPage);
