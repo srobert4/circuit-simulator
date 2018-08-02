@@ -3,7 +3,7 @@
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
     int ret;
-    ret = ngSpice_Init(getchar, getstat, ng_exit, NULL, NULL, thread_runs, this);
+    ret = ngSpice_Init(getchar, getstat, ng_exit, NULL, initdata, thread_runs, this);
     ret = ngSpice_Init_Sync(getvoltage, NULL, NULL, NULL, this);
 }
 
@@ -45,6 +45,22 @@ void SpiceEngine::stopSimulation()
     halt(); // note: halt will not return until no_bg == true
 }
 
+void SpiceEngine::saveResults(QList<QString> vecs, bool bin, QString filename)
+{
+    QString command = "write " + filename + " ";
+    foreach(QString vec, vecs) command += vec + " ";
+    if (!bin) this->command("set filetype=ascii");
+    this->command(command);
+}
+
+void SpiceEngine::plotResults(QList<QString> vecs, bool png, QString filename)
+{
+    QString command = "gnuplot " + filename + " ";
+    foreach(QString vec, vecs) command += vec + " ";
+    if (png) this->command("set gnuplot_terminal=png");
+    this->command(command);
+    if (png) this->command("set gnuplot_terminal=eps");
+}
 void SpiceEngine::emitStatusUpdate(char *status)
 {
     QString line = QString(status);
@@ -80,7 +96,38 @@ void SpiceEngine::getVoltage(double *voltage, double t, char *node)
     }
 }
 
+QList<QString> SpiceEngine::vectors()
+{
+    QList<QString> vectorNames;
+    foreach(pvecinfo v, vectorInfo) {
+        vectorNames.append(v->vecname);
+    }
+    return vectorNames;
+}
+
+void SpiceEngine::setVecInfo(pvecinfoall info)
+{
+    plotName = QString(info->name);
+    plotTitle = QString(info->title);
+    plotDate = QString(info->date);
+    plotType = QString(info->type);
+    numVectors = info->veccount;
+    vectorInfo.clear();
+    for(int i = 0; i < numVectors; i++) {
+        vectorInfo.append(info->vecs[i]);
+    }
+    emit initDataReady();
+}
+
 // ============= NGSPICE CALLBACK FUNCTIONS ======================
+
+int initdata(pvecinfoall intdata, int ident, void* userdata)
+{
+    Q_UNUSED(ident);
+    SpiceEngine *engine = (SpiceEngine *)userdata;
+    engine->setVecInfo(intdata);
+    return 0;
+}
 
 /* Callback function called from bg thread in ngspice to transfer
 any string created by printf or puts. Output to stdout in ngspice is

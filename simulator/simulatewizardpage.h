@@ -24,13 +24,26 @@ private:
     QVBoxLayout *layout;
     QProgressBar *progressBar;
     QLineEdit *dumpFilenameLineEdit;
+    QLabel *resultsLabel;
+    QGridLayout *resultsLayout;
+    QPushButton *saveButton;
+    QPushButton *plotButton;
     bool running;
+    QList<QString> vectors;
+    QMap<QString, bool> selectedVectors;
+    QString defaultFilename;
 
     void runSimulation();
     void cancelSimulation();
+    void showResults();
+    void initData();
+    void writeVectors();
+    void plot();
+    void save();
 
-public slots:
-    void updateProgressBar(int status);
+private slots:
+    void updateStatus(int progress);
+    void receiveError(char *errormsg);
 };
 
 #endif // SIMULATEWIZARDPAGE_H

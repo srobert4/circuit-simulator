@@ -3,8 +3,6 @@
 IntroWizardPage::IntroWizardPage(QWidget *parent) : QWizardPage(parent)
 {
     setTitle("Circuit Simulation Wizard");
-    setCommitPage(true);
-    setButtonText(QWizard::CommitButton, "Next");
 
     QLabel *text = new QLabel("Welcome to the circuit simulation wizard. Would you "
                               "like to use the circuit you have drawn or load a "
@@ -20,8 +18,16 @@ IntroWizardPage::IntroWizardPage(QWidget *parent) : QWizardPage(parent)
     answer->addButton(loadFileButton);
     answer->setExclusive(true);
 
-    connect(parseButton, &QRadioButton::toggled, [this] () { emit completeChanged(); });
-    connect(loadFileButton, &QRadioButton::toggled, [this](){ emit completeChanged(); });
+    connect(parseButton, &QRadioButton::toggled, [this] () {
+        setCommitPage(false);
+        emit completeChanged();
+    });
+
+    connect(loadFileButton, &QRadioButton::toggled, [this](){
+        setCommitPage(true);
+        setButtonText(QWizard::CommitButton, "&Run >");
+        emit completeChanged();
+    });
 
     QWidget *fileLoader = new QWidget(this);
     fileLineEdit = new QLineEdit(this);
@@ -56,16 +62,6 @@ IntroWizardPage::IntroWizardPage(QWidget *parent) : QWizardPage(parent)
     layout->addWidget(fileLoader);
 
     setLayout(layout);
-
-    conf = new QMessageBox;
-    conf->setIcon(QMessageBox::Question);
-    conf->setText("Start simulation?");
-    conf->setInformativeText("Once you start the simulation, you will not be able to "
-                             "edit the circuit selected.");
-    conf->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    conf->setDefaultButton(QMessageBox::No);
-    conf->setButtonText(QMessageBox::Yes, "Start simulation");
-    conf->setButtonText(QMessageBox::No, "Return");
 }
 
 bool IntroWizardPage::isComplete() const {
@@ -77,5 +73,8 @@ bool IntroWizardPage::isComplete() const {
 
 bool IntroWizardPage::validatePage() {
     if (field("parseCircuit").toBool()) return true;
-    return (conf->exec() == QMessageBox::Yes);
+    return QMessageBox::question(this,
+                                 "Start simulation?",
+                                 "Continue?\nYou will not be able to return to this page",
+                                 (QMessageBox::Cancel | QMessageBox::Yes)) == QMessageBox::Yes;
 }

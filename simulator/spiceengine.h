@@ -34,27 +34,47 @@ public:
     void stopSimulation();
     QList<QString> getAvailableGraphs();
     void graph(QString node);
+    QString curPlot() { return QString(ngSpice_CurPlot()); }
+    QList<QString> vectors();
+    void setVecInfo(pvecinfoall info);
+    void saveResults(QList<QString> vecs, bool bin, QString filename);
+    void plotResults(QList<QString> vecs, bool png, QString filename);
 
+    QString getPlotInfo() {
+        return plotName + ": \n" +
+                "Circuit: " + plotTitle + "\n" +
+                "Date: " + plotDate + "\n" +
+                "Plot: " + plotType; }
+    bool no_bg = true;
+    bool errorflag = false;
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+private:
     // convenience wrappers around ngspice functions
     int command(QString command) { return ngSpice_Command((char *)command.toLatin1().data()); }
     int run() { return ngSpice_Command((char *)"bg_run"); }
     int halt() { return ngSpice_Command((char *)"bg_halt"); }
     int resume() { return ngSpice_Command((char *)"bg_resume"); }
 
-    bool no_bg = true;
-    int vecgetnumber = 0;
-    bool errorflag = false;
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
     QMap<QString, BoundaryCondition *> *bcs;
     QString filename;
     bool dump = false;
     QString dumpFilename;
     Netlist *netlist = nullptr;
 
+    // plot info
+    QString plotName;
+    QString plotTitle;
+    QString plotDate;
+    QString plotType;
+    int numVectors;
+    QList<pvecinfo> vectorInfo;
+
 signals:
     void statusUpdate(int status);
     void spiceError(char *errormsg);
+    void initDataReady();
 
 public slots:
 };

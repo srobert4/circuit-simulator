@@ -4,7 +4,7 @@ SaveWizardPage::SaveWizardPage(bool saveOnly, QWidget *parent) : QWizardPage(par
 {
     setTitle("Save Your Circuit");
     setCommitPage(true);
-    setButtonText(QWizard::CommitButton, "Next");
+    setButtonText(QWizard::CommitButton, "&Run >");
 
     QLabel *label = new QLabel("Save your circuit to a file so that you can run"
                                " this simulation again without drawing a new schematic. "
@@ -60,23 +60,16 @@ SaveWizardPage::SaveWizardPage(bool saveOnly, QWidget *parent) : QWizardPage(par
         setButtonText(QWizard::FinishButton, "Save & Start Simulation");
     }
     setLayout(layout);
-
-    conf = new QMessageBox;
-    conf->setIcon(QMessageBox::Question);
-    conf->setText("Start simulation?");
-    conf->setInformativeText("Once you start the simulation, you will not be able to "
-                             "further edit your circuit or simulation settings.");
-    conf->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    conf->setDefaultButton(QMessageBox::No);
-    conf->setButtonText(QMessageBox::Yes, "Start simulation");
-    conf->setButtonText(QMessageBox::No, "Continue editing");
 }
 
 bool SaveWizardPage::validatePage() {
     if (saveDirLineEdit->text() == "" ||
             filenameLineEdit->text() == "") return false;
     if (!QDir(saveDirLineEdit->text()).exists()) return false;
-    if (conf->exec() == QMessageBox::No) return false;
+    if (QMessageBox::question(this,
+                                 "Start simulation?",
+                                 "Continue?\nYou will not be able to return to this page",
+                                 (QMessageBox::Cancel | QMessageBox::Yes)) == QMessageBox::Cancel) return false;
     emit ready();
     return true;
 }
