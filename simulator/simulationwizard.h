@@ -8,7 +8,6 @@
 #include "simulatewizardpage.h"
 #include "simoptionswizardpage.h"
 #include "icwizardpage.h"
-#include "simresultswizardpage.h"
 
 class SimulationWizard : public QWizard
 {

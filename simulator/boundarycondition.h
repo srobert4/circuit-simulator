@@ -1,10 +1,7 @@
 #ifndef BOUNDARYCONDITION_H
 #define BOUNDARYCONDITION_H
 
-#include <QObject>
-#include <QMap>
-#include <QFile>
-#include <QTextStream>
+#include <QtWidgets>
 #include <cmath>
 #include <QtMath>
 
@@ -17,7 +14,7 @@ public:
 
 private:
     QMap<qreal, qreal> states;
-    qreal period;
+    double period;
     double interpolate(
             QMap<qreal, qreal>::iterator low,
             QMap<qreal, qreal>::iterator high,

@@ -30,6 +30,11 @@ void Schematic::setElementProperties(CircuitElement::ElementProperties &properti
     elementProperties = properties;
     shadowImage = QPixmap(shadowPath);
     shadowImage = shadowImage.scaledToWidth(properties.image.width());
+    if (curShadow){
+        removeItem(curShadow);
+        delete curShadow;
+        curShadow = nullptr;
+    }
 }
 
 
@@ -142,11 +147,17 @@ void Schematic::simulate(bool saveOnly)
 
     // Show options dialog box
     simulationOptions = new SimulationWizard(netlist, spiceEngine, saveOnly, this);
-    simulationOptions->exec();
+    if (!parseErrorFlag) {
+        connect(this, &Schematic::parseComplete, [=](bool success){
+            if (!success) simulationOptions->close();
+        });
+        simulationOptions->exec();
+    }
 
     delete simulationOptions;
     simulationOptions = nullptr;
     removeNodeLabels();
+    parseErrorFlag = false;
 }
 
 int Schematic::parse()
@@ -179,14 +190,15 @@ int Schematic::parseFrom(Node *startNode, int startNodeID, int &curNodeID, Circu
         CircuitElement *element = qgraphicsitem_cast<CircuitElement *>(startNode->getElement());
 
         if (element->getSubtype() == "ground") {
+            if (lastAdded == nullptr) return IncompleteError;
             ret = netlist->groundElement(lastAdded);
             if (ret != 0) {
                 return ret;
             }
             startNode->displayID(0);
-            update();
-            QApplication::processEvents();
-            std::this_thread::sleep_for (std::chrono::seconds(1));
+//            update();
+//            QApplication::processEvents();
+//            std::this_thread::sleep_for (std::chrono::seconds(1));
             curNodeID--;
             return 0;
         }
@@ -197,10 +209,10 @@ int Schematic::parseFrom(Node *startNode, int startNodeID, int &curNodeID, Circu
         lastAdded = element;
         startNode->displayID(startNodeID);
 
-        update();
+//        update();
 
-        QApplication::processEvents();
-        std::this_thread::sleep_for (std::chrono::seconds(1));
+//        QApplication::processEvents();
+//        std::this_thread::sleep_for (std::chrono::seconds(1));
         seen.insert(startNode);
         startNode = element->getOtherNode(startNode);
     }
@@ -295,9 +307,9 @@ void Schematic::parseSchematic()
         box->exec();
         delete box;
         removeNodeLabels();
-        simulationOptions->close();
+        parseErrorFlag = true;
     }
-    emit parseComplete();
+    emit parseComplete(!parseErrorFlag);
 }
 
 // ============= EVENT HANDLERS ================================

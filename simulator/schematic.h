@@ -38,7 +38,7 @@ protected:
 
 signals:
     void schematicClicked(); // -> (MainWindow) slotSchematicClicked()
-    void parseComplete();
+    void parseComplete(bool success);
 
 public slots:
     void parseSchematic();
@@ -73,6 +73,7 @@ private:
     int showSimulationOptions();
     CircuitElement *getStartingElement();
     void removeNodeLabels();
+    bool parseErrorFlag = false;
 
     // Drawing functions
     void addElement();

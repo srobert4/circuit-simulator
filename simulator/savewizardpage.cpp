@@ -3,9 +3,13 @@
 SaveWizardPage::SaveWizardPage(bool saveOnly, QWidget *parent) : QWizardPage(parent)
 {
     setTitle("Save Your Circuit");
+    setCommitPage(true);
+    setButtonText(QWizard::CommitButton, "Next");
 
     QLabel *label = new QLabel("Save your circuit to a file so that you can run"
-                               " this simulation again without drawing a new schematic.", this);
+                               " this simulation again without drawing a new schematic. "
+                               "Once you save your circuit, you cannot edit the circuit or"
+                               " simulation settings further in this wizard.", this);
     label->setWordWrap(true);
 
     nameLineEdit = new QLineEdit(this);
@@ -50,14 +54,29 @@ SaveWizardPage::SaveWizardPage(bool saveOnly, QWidget *parent) : QWizardPage(par
     connect(filenameLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
     connect(saveDirLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
 
-    if (saveOnly) setButtonText(QWizard::FinishButton, "Save & Exit");
+    if (saveOnly) {
+        setButtonText(QWizard::FinishButton, "Save & Exit");
+    } else {
+        setButtonText(QWizard::FinishButton, "Save & Start Simulation");
+    }
     setLayout(layout);
+
+    conf = new QMessageBox;
+    conf->setIcon(QMessageBox::Question);
+    conf->setText("Start simulation?");
+    conf->setInformativeText("Once you start the simulation, you will not be able to "
+                             "further edit your circuit or simulation settings.");
+    conf->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    conf->setDefaultButton(QMessageBox::No);
+    conf->setButtonText(QMessageBox::Yes, "Start simulation");
+    conf->setButtonText(QMessageBox::No, "Continue editing");
 }
 
 bool SaveWizardPage::validatePage() {
     if (saveDirLineEdit->text() == "" ||
             filenameLineEdit->text() == "") return false;
     if (!QDir(saveDirLineEdit->text()).exists()) return false;
+    if (conf->exec() == QMessageBox::No) return false;
     emit ready();
     return true;
 }

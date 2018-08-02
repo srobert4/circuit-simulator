@@ -1,10 +1,12 @@
 #ifndef SPICEENGINE_H
 #define SPICEENGINE_H
 
+#include <stdio.h>
 #include <QObject>
 #include <QtWidgets>
 #include "boundarycondition.h"
 #include "/usr/local/include/ngspice/sharedspice.h"
+#include "netlist.h"
 
 int getchar(char *outputreturn, int ident, void *userdata);
 int getstat(char *outputreturn, int ident, void *userdata);
@@ -21,8 +23,13 @@ class SpiceEngine : public QObject
     Q_OBJECT
 public:
     explicit SpiceEngine(QObject *parent = nullptr);
-    void startSimulation(QString filename, const QMap<QString, BoundaryCondition *> *bcs);
+    void startSimulation(QString filename,
+                         const QMap<QString, BoundaryCondition *> *bcs,
+                         bool dump, QString dumpFilename);
+    void startSimulation(Netlist *netlist, bool dump, QString dumpFilename);
     void emitStatusUpdate(char *status);
+    void writeOutput(char *output);
+    void getVoltage(double *voltage, double t, char *node);
     bool running() { return no_bg; }
     void stopSimulation();
     QList<QString> getAvailableGraphs();
@@ -41,9 +48,13 @@ public:
     pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
     QMap<QString, BoundaryCondition *> *bcs;
     QString filename;
+    bool dump = false;
+    QString dumpFilename;
+    Netlist *netlist = nullptr;
 
 signals:
     void statusUpdate(int status);
+    void spiceError(char *errormsg);
 
 public slots:
 };

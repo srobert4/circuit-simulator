@@ -42,6 +42,7 @@ bool ICWizardPage::validatePage()
         node.toInt(&numName);
         line += " " + (numName ? "v(" + node + ")" : node) + "=" + value;
     }
+    if (line == ".ic") line = "";
     outputLine->setText(line);
     return true;
 }

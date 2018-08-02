@@ -4,11 +4,12 @@ SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netli
 {
     schematic = schem;
     this->netlist = netlist;
-    connect(this, SIGNAL(parseSchematic()), schematic, SLOT(parseSchematic()));
     setTitle("Set Simulation Mode");
 
     QComboBox *simulationTypeComboBox = new QComboBox(this);
-    simulationTypeComboBox->addItems(simulationTypes);
+    modes = {""};
+    modes.append(simulationModes.keys());
+    simulationTypeComboBox->addItems(modes);
     registerField("simulationType*", simulationTypeComboBox, "currentText");
 
     layout = new QFormLayout;
@@ -22,10 +23,15 @@ SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netli
         visibleExtension = index;}
     );
 
+    const QChar MathSymbolSigma(0x03BC);
+    mu.setUnicode(&MathSymbolSigma, 1);
+    unitModifiers = { "", "T", "G", "M", "K", "m", mu, "n", "p", "f" };
+
     QWidget *tran = createTranExtension();
     tran->setHidden(true);
     layout->addWidget(tran);
-    simulationExtensions[1] = tran;
+    int tranIndex = modes.indexOf("Transient");
+    simulationExtensions[tranIndex] = tran;
 
 
     outputLine = new QLineEdit();
@@ -36,6 +42,7 @@ SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netli
 
 void SimOptionsWizardPage::initializePage()
 {
+    connect(this, SIGNAL(parseSchematic()), schematic, SLOT(parseSchematic()));
     emit parseSchematic();
 
     QApplication::processEvents();
@@ -43,7 +50,10 @@ void SimOptionsWizardPage::initializePage()
     QWidget *dc = createDCExtension(netlist->getElementNames());
     dc->setHidden(true);
     layout->addWidget(dc);
-    simulationExtensions[2] = dc;
+    int dcIndex = modes.indexOf("DC");
+    simulationExtensions[dcIndex] = dc;
+
+    disconnect(this, SIGNAL(parseSchematic()), schematic, SLOT(parseSchematic()));
 }
 
 QWidget *SimOptionsWizardPage::createTranExtension()
@@ -55,11 +65,11 @@ QWidget *SimOptionsWizardPage::createTranExtension()
     QLabel *unitsLabelTwo = new QLabel("s", this);
 
     QComboBox *stepUnits = new QComboBox(this);
-    stepUnits->addItems(timeUnits);
+    stepUnits->addItems(unitModifiers);
     registerField("tranStepUnits", stepUnits, "currentText");
 
     QComboBox *durUnits = new QComboBox(this);
-    durUnits->addItems(timeUnits);
+    durUnits->addItems(unitModifiers);
     registerField("tranDurUnits", durUnits, "currentText");
 
     QLineEdit *durationLineEdit = new QLineEdit(this);
@@ -101,7 +111,7 @@ QWidget *SimOptionsWizardPage::createDCExtension(QSet<QString> elements)
     registerField("dcStartVoltage", startLineEdit);
     connect(startLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
     QComboBox *startUnits = new QComboBox(this);
-    startUnits->addItems(timeUnits);
+    startUnits->addItems(unitModifiers);
     registerField("dcStartUnits", startUnits, "currentText");
     QLabel *startVLabel = new QLabel("V", this);
 
@@ -110,7 +120,7 @@ QWidget *SimOptionsWizardPage::createDCExtension(QSet<QString> elements)
     registerField("dcStopVoltage", endLineEdit);
     connect(endLineEdit, &QLineEdit::textEdited, [this](){ emit completeChanged(); });
     QComboBox *endUnits = new QComboBox(this);
-    endUnits->addItems(timeUnits);
+    endUnits->addItems(unitModifiers);
     registerField("dcStopUnits", endUnits, "currentText");
     QLabel *endVLabel = new QLabel("V", this);
 
@@ -135,11 +145,11 @@ bool SimOptionsWizardPage::isComplete() const
     QString mode = field("simulationType").toString();
     if (mode == "") return false;
 
-    if (mode == ".tran")
+    if (mode == "Transient")
         return (field("tranStep").toString() != ""  &&
                 field("tranDuration").toString() != "");
 
-    if (mode == ".dc")
+    if (mode == "DC")
         return (field("dcVoltageSource").toString() != "" &&
             field("dcStartVoltage").toString() != "" &&
             field("dcStopVoltage").toString() != "");
@@ -151,16 +161,25 @@ bool SimOptionsWizardPage::validatePage()
 {
     QString mode = field("simulationType").toString();
     if (mode == "") return false;
+    mode = simulationModes[mode];
 
     if (mode == ".tran") {
-        outputLine->setText(mode + " " + field("tranStep").toString() + field("tranStepUnits").toString() + "s" +
-                " " + field("tranDuration").toString() + field("tranDurUnits").toString() + "s" + " uic");
+        QString stepUnits = field("tranStepUnits").toString();
+        if (stepUnits == mu) stepUnits = "u";
+        QString durUnits = field("tranDurUnits").toString();
+        if (durUnits == mu) durUnits = "u";
+        outputLine->setText(mode + " " + field("tranStep").toString() + stepUnits + "s" +
+                " " + field("tranDuration").toString() + durUnits + "s" + " uic");
     }
 
     if (mode == ".dc") {
+        QString startUnits = field("dcStartUnits").toString();
+        if (startUnits == mu) startUnits = "u";
+        QString stopUnits = field("dcStopVoltage").toString();
+        if (stopUnits == mu) stopUnits = "u";
         outputLine->setText(mode + " " + field("dcVoltageSource").toString() + " " +
-                            field("dcStartVoltage").toString() + field("dcStartUnits").toString() + " " +
-                            field("dcStopVoltage").toString() + field("dcStopUnits").toString());
+                            field("dcStartVoltage").toString() + startUnits + " " +
+                            field("dcStopVoltage").toString() + stopUnits);
     }
     return true;
 

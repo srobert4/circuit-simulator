@@ -71,6 +71,7 @@ private:
     QString name;
     QString value;
     QString unitMod;
+    QString mu;
     QString units;
     QString externalFile;
 
@@ -84,6 +85,7 @@ private:
     QList<QString> unitModifiers;
     QWidget *constValueExt;
     QWidget *extValueExt;
+    bool external = false;
 
     // Private functions
     QDialog *createDialogBox(QString prefix, QString units, bool allowsExternalInput);

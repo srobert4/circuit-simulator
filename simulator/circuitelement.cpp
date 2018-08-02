@@ -36,7 +36,6 @@ CircuitElement::CircuitElement(
     }
 
     // create Dialog box
-    QString mu;
     const QChar MathSymbolSigma(0x03BC);
     mu.setUnicode(&MathSymbolSigma, 1);
     unitModifiers = { "", "T", "G", "M", "K", "m", mu, "n", "p", "f" };
@@ -232,11 +231,13 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
         extValueExt->hide();
 
         connect(constButton, &QRadioButton::toggled, [=](){
+            external = false;
             constValueExt->setVisible(true);
             extValueExt->setHidden(true);
             doneButton->setEnabled(true);
         });
         connect(externalButton, &QRadioButton::toggled, [=](){
+            external = true;
            constValueExt->setHidden(true);
            extValueExt->setVisible(true);
            doneButton->setEnabled(valueFileLineEdit->text() != "" &&
@@ -302,7 +303,8 @@ void CircuitElement::processDialogInput()
     name = nameLineEdit->text();
     value = valueLineEdit->text();
     unitMod = unitsComboBox->currentText();
-    if (valueFileLineEdit && valueFileLineEdit->text() != "") {
+    if (unitMod == mu) unitMod = "u";
+    if (external) {
         value = "External";
         label->setText(prefix + name + "\n" + value);
         externalFile = valueFileLineEdit->text();

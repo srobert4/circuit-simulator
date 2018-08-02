@@ -5,6 +5,7 @@ BoundaryCondition::BoundaryCondition(QString filename,
                                      QObject *parent) : QObject(parent)
 {
     this->period = period;
+    qInfo() << "filename in boundarycondition.cpp: " << filename;
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
@@ -12,7 +13,7 @@ BoundaryCondition::BoundaryCondition(QString filename,
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
-        QStringList tokens = line.split("\\s+");
+        QStringList tokens = line.split("\t");
         if (tokens.length() != 2) {
             emit badFile();
             return;

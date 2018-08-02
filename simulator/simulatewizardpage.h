@@ -16,12 +16,14 @@ public:
 protected:
     virtual bool isComplete() const override;
     virtual bool validatePage() override;
+    virtual void initializePage() override;
 
 private:
     SpiceEngine *engine;
     Netlist *netlist;
     QVBoxLayout *layout;
     QProgressBar *progressBar;
+    QLineEdit *dumpFilenameLineEdit;
     bool running;
 
     void runSimulation();

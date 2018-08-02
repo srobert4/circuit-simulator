@@ -14,12 +14,15 @@ signals:
 
 protected:
     virtual bool isComplete() const override;
+    virtual bool validatePage() override;
 
 private:
     QRadioButton *parseButton;
     QRadioButton *loadFileButton;
     QLineEdit *fileLineEdit;
     QString filename;
+
+    QMessageBox *conf;
 };
 
 #endif // INTROWIZARDPAGE_H

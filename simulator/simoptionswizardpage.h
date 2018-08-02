@@ -21,19 +21,17 @@ private:
     QFormLayout *layout;
     QLineEdit *outputLine;
 
-    QList<QString> simulationTypes = {
-        "",
-        ".tran",
-        ".dc"
+    QMap<QString, QString> simulationModes = {
+        {"Transient", ".tran"},
+        {"DC", ".dc"}
     };
+    QList<QString> modes; // holds order of combobox
     QMap<int, QWidget *> simulationExtensions;
     int visibleExtension = 0;
+    QString mu;
+    QList<QString> unitModifiers;
 
     QWidget *createTranExtension();
-    QList<QString> timeUnits = {
-        "", "m", "u", "n"
-    };
-
     QWidget *createDCExtension(QSet<QString> elements);
 
 signals:

@@ -20,6 +20,8 @@ private:
     QLineEdit *saveDirLineEdit;
     QLineEdit *filenameLineEdit;
 
+    QMessageBox *conf;
+
 
 signals:
     void ready();

@@ -38,7 +38,6 @@ SOURCES += \
     simulatewizardpage.cpp \
     simoptionswizardpage.cpp \
     icwizardpage.cpp \
-    simresultswizardpage.cpp \
     spiceengine.cpp
 
 HEADERS += \
@@ -56,7 +55,6 @@ HEADERS += \
     simulatewizardpage.h \
     simoptionswizardpage.h \
     icwizardpage.h \
-    simresultswizardpage.h \
     spiceengine.h
 
 RESOURCES += \

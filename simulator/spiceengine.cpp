@@ -7,10 +7,29 @@ SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
     ret = ngSpice_Init_Sync(getvoltage, NULL, NULL, NULL, this);
 }
 
-void SpiceEngine::startSimulation(QString filename, const QMap<QString, BoundaryCondition *> *bcs)
+void SpiceEngine::startSimulation(QString filename,
+                                  const QMap<QString, BoundaryCondition *> *bcs,
+                                  bool dump, QString dumpFilename)
 {
-    int ret;
-    ret = command("source " + filename);
+    this->dump = dump;
+    this->dumpFilename = dumpFilename;
+    int ret = command("source " + filename);
+    pthread_mutex_lock(&mutex);
+    ret = run();
+    // wait for background thread to start
+    while(no_bg) {
+        pthread_cond_wait(&cond, &mutex);
+    }
+    pthread_mutex_unlock(&mutex);
+}
+
+void SpiceEngine::startSimulation(Netlist *netlist, bool dump, QString dumpFilename)
+{
+    this->dump = dump;
+    this->dumpFilename = dumpFilename;
+    filename = netlist->getFilename();
+    this->netlist = netlist;
+    int ret = command("source " + filename);
     pthread_mutex_lock(&mutex);
     ret = run();
     // wait for background thread to start
@@ -39,6 +58,28 @@ void SpiceEngine::emitStatusUpdate(char *status)
     if (stat != 0.0) emit statusUpdate((int)stat);
 }
 
+void SpiceEngine::writeOutput(char *output)
+{
+    if (ciprefix("stderr Error:", output))
+        emit spiceError(output);
+    if (!dump) return;
+    QFile file(dumpFilename);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        QTextStream out(&file);
+        out << output << endl;
+        file.close();
+    }
+}
+
+void SpiceEngine::getVoltage(double *voltage, double t, char *node)
+{
+    if (netlist == nullptr) {
+        *voltage = bcs->value(node)->getState(t);
+    } else {
+        *voltage = netlist->getBoundaryPressure(node, t);
+    }
+}
+
 // ============= NGSPICE CALLBACK FUNCTIONS ======================
 
 /* Callback function called from bg thread in ngspice to transfer
@@ -48,8 +89,7 @@ int getchar(char* outputreturn, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = (SpiceEngine *)userdata;
-    if (ciprefix("stderr Error:", outputreturn))
-        engine->errorflag = true;
+    engine->writeOutput(outputreturn);
     return 0;
 }
 
@@ -103,7 +143,7 @@ int getvoltage(double* voltage, double t, char* node, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = (SpiceEngine *)userdata;
-    *voltage = engine->bcs->value(node)->getState(t);
+    engine->getVoltage(voltage, t, node);
     return 0;
 }
 

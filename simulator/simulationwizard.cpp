@@ -24,6 +24,9 @@ SimulationWizard::SimulationWizard(Netlist *netlist, SpiceEngine *engine, bool s
     setPage(Page_RunSim, new SimulateWizardPage(engine, netlist));
 
     setWindowTitle("Simulation Wizard");
+    setOption(QWizard::IndependentPages); // only run initializePage() once for each page.
+                                          // Dependent upon disabled back button on simoptions
+                                          // and sim pages.
     show();
 }
 
