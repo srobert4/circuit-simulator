@@ -3,8 +3,8 @@
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
     int ret;
-    ret = ngSpice_Init(getchar, getstat, ng_exit, NULL, initdata, thread_runs, this);
-    ret = ngSpice_Init_Sync(getvoltage, NULL, NULL, NULL, this);
+    ret = ngSpice_Init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
+    ret = ngSpice_Init_Sync(getvoltage, nullptr, nullptr, nullptr, this);
 }
 
 void SpiceEngine::startSimulation(QString filename,
@@ -76,12 +76,12 @@ void SpiceEngine::emitStatusUpdate(char *status)
         return;
     }
     qreal stat = tokens[1].left(tokens[1].length() - 1).toDouble();
-    if (stat != 0.0) emit statusUpdate((int)stat);
+    if (stat != 0.0) emit statusUpdate(static_cast<int>(stat));
 }
 
 void SpiceEngine::writeOutput(char *output)
 {
-    if (ciprefix("stderr Error:", output))
+    if (QString(output).startsWith("stderr Error:", Qt::CaseInsensitive))
         emit spiceError(output);
     if (!dump) return;
     QFile file(dumpFilename);
@@ -129,7 +129,7 @@ void SpiceEngine::setVecInfo(pvecinfoall info)
 int initdata(pvecinfoall intdata, int ident, void* userdata)
 {
     Q_UNUSED(ident);
-    SpiceEngine *engine = (SpiceEngine *)userdata;
+    SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
     engine->setVecInfo(intdata);
     return 0;
 }
@@ -140,7 +140,7 @@ preceded by token stdout, same with stderr.*/
 int getchar(char* outputreturn, int ident, void* userdata)
 {
     Q_UNUSED(ident);
-    SpiceEngine *engine = (SpiceEngine *)userdata;
+    SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
     engine->writeOutput(outputreturn);
     return 0;
 }
@@ -149,7 +149,7 @@ int getchar(char* outputreturn, int ident, void* userdata)
 int getstat(char* outputreturn, int ident, void* userdata)
 {
     Q_UNUSED(ident);
-    SpiceEngine *engine = (SpiceEngine *)userdata;
+    SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
     engine->emitStatusUpdate(outputreturn);
     return 0;
 }
@@ -157,7 +157,7 @@ int getstat(char* outputreturn, int ident, void* userdata)
 int thread_runs(bool noruns, int ident, void* userdata)
 {
     Q_UNUSED(ident);
-    SpiceEngine *engine = (SpiceEngine *)userdata;
+    SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
     pthread_mutex_lock(&engine->mutex);
     engine->no_bg = noruns;
     pthread_cond_signal(&engine->cond);
@@ -171,7 +171,7 @@ int thread_runs(bool noruns, int ident, void* userdata)
 int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* userdata)
 {
     Q_UNUSED(ident);
-    SpiceEngine *engine = (SpiceEngine *)userdata;
+    SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
     if(quitexit) {
         printf("DNote: Returned form quit with exit status %d\n", exitstatus);
         exit(exitstatus);
@@ -185,7 +185,7 @@ int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* user
         printf("DNote: Unloading ngspice is not possible\n");
         printf("DNote: Can we recover? Send 'quit' command to ngspice.\n");
         engine->errorflag = true;
-        ngSpice_Command( (char*) "quit 5");
+        ngSpice_Command(const_cast<char *>("quit 5"));
     }
 
     return exitstatus;
@@ -194,35 +194,8 @@ int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* user
 int getvoltage(double* voltage, double t, char* node, int ident, void* userdata)
 {
     Q_UNUSED(ident);
-    SpiceEngine *engine = (SpiceEngine *)userdata;
+    SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
     engine->getVoltage(voltage, t, node);
     return 0;
-}
-
-/* Case insensitive str eq. */
-/* Like strcasecmp( ) XXX */
-int cieq(register char *p, register char *s)
-{
-    while (*p) {
-        if ((isupper(*p) ? tolower(*p) : *p) !=
-            (isupper(*s) ? tolower(*s) : *s))
-            return(false);
-        p++;
-        s++;
-    }
-    return (*s ? false : true);
-}
-
-/* Case insensitive prefix. */
-int ciprefix(const char *p, const char *s)
-{
-    while (*p) {
-        if ((isupper(*p) ? tolower(*p) : *p) !=
-            (isupper(*s) ? tolower(*s) : *s))
-            return(false);
-        p++;
-        s++;
-    }
-    return (true);
 }
 

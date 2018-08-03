@@ -1,14 +1,15 @@
 #include "introwizardpage.h"
 
+/* Constructor */
 IntroWizardPage::IntroWizardPage(QWidget *parent) : QWizardPage(parent)
 {
     setTitle("Circuit Simulation Wizard");
-
     QLabel *text = new QLabel("Welcome to the circuit simulation wizard. Would you "
                               "like to use the circuit you have drawn or load a "
                               "previously saved circuit?", this);
     text->setWordWrap(true);
 
+    // Create buttons
     QButtonGroup *answer = new QButtonGroup(this);
     parseButton = new QRadioButton("Use this circuit", this);
     loadFileButton = new QRadioButton("Load circuit from file", this);
@@ -18,17 +19,8 @@ IntroWizardPage::IntroWizardPage(QWidget *parent) : QWizardPage(parent)
     answer->addButton(loadFileButton);
     answer->setExclusive(true);
 
-    connect(parseButton, &QRadioButton::toggled, [this] () {
-        setCommitPage(false);
-        emit completeChanged();
-    });
 
-    connect(loadFileButton, &QRadioButton::toggled, [this](){
-        setCommitPage(true);
-        setButtonText(QWizard::CommitButton, "&Run >");
-        emit completeChanged();
-    });
-
+    // File browser widget
     QWidget *fileLoader = new QWidget(this);
     fileLineEdit = new QLineEdit(this);
     registerField("filename", fileLineEdit);
@@ -52,9 +44,21 @@ IntroWizardPage::IntroWizardPage(QWidget *parent) : QWizardPage(parent)
     fileLoader->setLayout(fileLoaderLayout);
     fileLoader->setHidden(true);
 
-    connect(parseButton, &QRadioButton::toggled, fileLoader, &QWidget::setHidden);
-    connect(loadFileButton, &QRadioButton::toggled, fileLoader, &QWidget::setVisible);
+    // Connect buttons
+    connect(parseButton, &QRadioButton::toggled, [=] () {
+        setCommitPage(false);
+        fileLoader->setHidden(true);
+        emit completeChanged();
+    });
 
+    connect(loadFileButton, &QRadioButton::toggled, [=](){
+        setCommitPage(true);
+        setButtonText(QWizard::CommitButton, "&Run >");
+        fileLoader->setVisible(true);
+        emit completeChanged();
+    });
+
+    // Set up layout
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addWidget(text);
     layout->addWidget(parseButton);
@@ -64,6 +68,13 @@ IntroWizardPage::IntroWizardPage(QWidget *parent) : QWizardPage(parent)
     setLayout(layout);
 }
 
+// =========== PROTECTED FUNCTIONS ======================
+
+/* isComplete()
+ * ------------
+ * Activates next button only if the parse option
+ * is selected or if the file to load is valid.
+ */
 bool IntroWizardPage::isComplete() const {
     if (parseButton->isChecked()) return true;
     if (!loadFileButton->isChecked()) return false;
@@ -71,8 +82,19 @@ bool IntroWizardPage::isComplete() const {
     return QFileInfo::exists(fileLineEdit->text()) && QFileInfo(fileLineEdit->text()).isFile();
 }
 
+/* validatePage()
+ * --------------
+ * If parse option selected - parse the circuit
+ * Else - confirm that the user wants to go to sim page with no return option
+ */
 bool IntroWizardPage::validatePage() {
-    if (field("parseCircuit").toBool()) return true;
+    if (parseButton->isChecked()) {
+        if (parseComplete) return true;
+        emit parseCircuit();
+        QApplication::processEvents();
+        parseComplete = true;
+        return true;
+    }
     return QMessageBox::question(this,
                                  "Start simulation?",
                                  "Continue?\nYou will not be able to return to this page",

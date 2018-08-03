@@ -3,6 +3,7 @@
 /* Constructor: Schematic(QWidget *)
  * ---------------------------------
  * Initialize to edit mode.
+ * Initialize simulation engine.
  */
 Schematic::Schematic(QObject *parent)
     : QGraphicsScene(parent)
@@ -134,28 +135,39 @@ QPointF Schematic::gridPos(QPointF point)
     return gridPos(point.x(), point.y());
 }
 
-CircuitElement *Schematic::getStartingElement()
-{
-    return nullptr;
-}
-
+/* Privat Functino: simulate(bool)
+ * -------------------------------
+ * Initialize a new netlist and
+ * carry out simulation (bool = false)
+ * or save.
+ */
 void Schematic::simulate(bool saveOnly)
 {
     // Construct netlist
     if (netlist != nullptr) delete netlist;
     netlist = new Netlist();
 
+    // if saveOnly then parse the schematic since
+    // it will definitely be used.
     if (saveOnly) parseSchematic();
 
+    if (parseErrorFlag) {
+        removeNodeLabels();
+        parseErrorFlag = false;
+        return;
+    }
+
     // Show options dialog box
-    simulationOptions = new SimulationWizard(netlist, spiceEngine, saveOnly, this);
+    simulationOptions = new SimulationWizard(netlist, spiceEngine, saveOnly);
+    connect(simulationOptions, &SimulationWizard::parseCircuit, this, &Schematic::parseSchematic);
     if (!parseErrorFlag) {
         connect(this, &Schematic::parseComplete, [=](bool success){
-            if (!success) simulationOptions->close();
+            if (simulationOptions && !success) simulationOptions->close();
         });
         simulationOptions->exec();
     }
 
+    // Clean up
     delete simulationOptions;
     simulationOptions = nullptr;
     spiceEngine->stopSimulation(); // in case of bad close
@@ -163,7 +175,19 @@ void Schematic::simulate(bool saveOnly)
     parseErrorFlag = false;
 }
 
-int Schematic::parse()
+/* Private Function: parse()
+ * -------------------------
+ * Start the parsing process for
+ * the currently drawn circuit. Finds
+ * starting node and starts recursion.
+ *
+ * Returns 0 on success or non-zero error
+ * value
+ *
+ * This function is called in the slot parseSchematic
+ * which handles errors. It should not be called on its own
+ */
+int Schematic::_parse()
 {
     CircuitElement *start = nullptr;
     QList<QGraphicsItem *> items = this->items();
@@ -181,10 +205,17 @@ int Schematic::parse()
     int nodeID = -1;
     Node *startNode = start->getNodeTwo(); // TODO: don't hardcode
     QSet<Node *> seen;
-    return parseFrom(startNode, 0, nodeID, nullptr, seen);
+    return _parseFrom(startNode, 0, nodeID, nullptr, seen);
 }
 
-int Schematic::parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *> &seen)
+/* Private Function: parseFrom(Node *, int, int, CircuitElement *, QSet<Node *>)
+ * -----------------------------------------------------------------------------
+ * Recursive parsing function to parse currently drawn schematic.
+ * Returns 0 on success or non-zero error value.
+ *
+ * This function is called by _parse() and should not be used on its own
+ */
+int Schematic::_parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *> &seen)
 {
     int ret;
     if (startNode == nullptr) return -1;
@@ -229,7 +260,7 @@ int Schematic::parseFrom(Node *startNode, int startNodeID, int &curNodeID, Circu
     foreach (node, startNode->getConnectedNodes()) {
         if (seen.contains(node)) continue;
         connections++;
-        ret = parseFrom(node, startNodeID, curNodeID, lastAdded, seen);
+        ret = _parseFrom(node, startNodeID, curNodeID, lastAdded, seen);
         if (ret != 0) return ret;
     }
     if (connections == 0) return IncompleteError;
@@ -250,6 +281,10 @@ void Schematic::removeNodeLabels()
     }
 }
 
+/* Private Function: deleteAll()
+ * -----------------------------
+ * Deletes all items in the scene
+ */
 void Schematic::deleteAll()
 {
     foreach(QGraphicsItem *item, items())
@@ -281,10 +316,16 @@ void Schematic::deleteSelection()
 
 // ============= SLOTS =========================================
 
+/* Slot: parseSchematic()
+ * ----------------------
+ * Function to parse schematic and handle error cases.
+ * Emits parseComplete(success) to let simulationWizard know that
+ * parsing is complete.
+ */
 void Schematic::parseSchematic()
 {
     // Parse diagram and add elements
-    int ret = parse();
+    int ret = _parse();
     if (ret != 0) {
         QString errormsg;
         switch (ret) {
@@ -459,8 +500,8 @@ void Schematic::drawBackground(QPainter *painter, const QRectF &rect)
 /* KeyEvent: keyReleaseEvent(QKeyEvent *)
  * --------------------------------------
  * Delete - delete selected items
- * r/right arrow - rotate selected items cw // TODO
- * R/left arrow - rotate selected items ccw // TODO
+ * Right arrow - rotate selected items cw
+ * Left arrow - rotate selected items ccw
  * Esc - deselect all items, stop drawing wire if drawing
  */
 void Schematic::keyReleaseEvent(QKeyEvent *event)

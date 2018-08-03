@@ -38,8 +38,7 @@ SOURCES += \
     simulatewizardpage.cpp \
     simoptionswizardpage.cpp \
     icwizardpage.cpp \
-    spiceengine.cpp \
-    saveintrowizardpage.cpp
+    spiceengine.cpp
 
 HEADERS += \
         mainwindow.h \

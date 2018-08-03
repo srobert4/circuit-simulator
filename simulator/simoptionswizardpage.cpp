@@ -1,12 +1,11 @@
 #include "simoptionswizardpage.h"
 
-SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netlist, bool saveOnly, QWidget *parent) : QWizardPage(parent)
+SimOptionsWizardPage::SimOptionsWizardPage(Netlist *netlist, QWidget *parent) : QWizardPage(parent)
 {
-    schematic = schem;
     this->netlist = netlist;
-    this->saveOnly = saveOnly;
     setTitle("Set Simulation Mode");
 
+    // Set up mode selection combo-box
     QComboBox *simulationTypeComboBox = new QComboBox(this);
     modes = {""};
     modes.append(simulationModes.keys());
@@ -24,40 +23,45 @@ SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netli
         visibleExtension = index;}
     );
 
+    // Initialize unit modifiers
     const QChar MathSymbolSigma(0x03BC);
     mu.setUnicode(&MathSymbolSigma, 1);
     unitModifiers = { "", "T", "G", "M", "K", "m", mu, "n", "p", "f" };
 
+    // Set up transient extension (does not rely on netlist)
     QWidget *tran = createTranExtension();
     tran->setHidden(true);
     layout->addWidget(tran);
     int tranIndex = modes.indexOf("Transient");
     simulationExtensions[tranIndex] = tran;
 
-
+    // Field to store final output
     outputLine = new QLineEdit();
     registerField("simOptions", outputLine);
 
     setLayout(layout);
 }
 
+/* initializePage()
+ * ----------------
+ * Called once, the first time this page
+ * is shown. Initializes DC extension with
+ * the elements in the netlist.
+ */
 void SimOptionsWizardPage::initializePage()
 {
-    if (!saveOnly)
-        connect(this, SIGNAL(parseSchematic()), schematic, SLOT(parseSchematic()));
-    emit parseSchematic();
-
-    QApplication::processEvents();
-
+    // Set up DC extension now that netlist has been parsed
     QWidget *dc = createDCExtension(netlist->getElementNames());
     dc->setHidden(true);
     layout->addWidget(dc);
     int dcIndex = modes.indexOf("DC");
     simulationExtensions[dcIndex] = dc;
-
-    disconnect(this, SIGNAL(parseSchematic()), schematic, SLOT(parseSchematic()));
 }
 
+/* createTranExtension()
+ * ---------------------
+ * Returns QWidget with Transient analysis options
+ */
 QWidget *SimOptionsWizardPage::createTranExtension()
 {
     QWidget *tran = new QWidget(this);
@@ -95,6 +99,10 @@ QWidget *SimOptionsWizardPage::createTranExtension()
     return tran;
 }
 
+/* createDCExtension()
+ * -------------------
+ * Returns QWidget with DC Analysis options
+ */
 QWidget *SimOptionsWizardPage::createDCExtension(QSet<QString> elements)
 {
     QWidget *dc = new QWidget(this);
@@ -142,6 +150,12 @@ QWidget *SimOptionsWizardPage::createDCExtension(QSet<QString> elements)
     return dc;
 }
 
+/* isComplete()
+ * ------------
+ * Page is complete if a simulation mode
+ * is selected and its relevant fields are
+ * filled in.
+ */
 bool SimOptionsWizardPage::isComplete() const
 {
     QString mode = field("simulationType").toString();
@@ -159,6 +173,11 @@ bool SimOptionsWizardPage::isComplete() const
     return false;
 }
 
+/* validatePage()
+ * --------------
+ * Before moving to the next page, populates the outputLine
+ * with the ngspice command to run the selected simulation
+ */
 bool SimOptionsWizardPage::validatePage()
 {
     QString mode = field("simulationType").toString();
@@ -172,6 +191,7 @@ bool SimOptionsWizardPage::validatePage()
         if (durUnits == mu) durUnits = "u";
         outputLine->setText(mode + " " + field("tranStep").toString() + stepUnits + "s" +
                 " " + field("tranDuration").toString() + durUnits + "s" + " uic");
+        return true;
     }
 
     if (mode == ".dc") {
@@ -182,7 +202,8 @@ bool SimOptionsWizardPage::validatePage()
         outputLine->setText(mode + " " + field("dcVoltageSource").toString() + " " +
                             field("dcStartVoltage").toString() + startUnits + " " +
                             field("dcStopVoltage").toString() + stopUnits);
+        return true;
     }
-    return true;
+    return false;
 
 }

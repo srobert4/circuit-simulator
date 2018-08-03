@@ -10,7 +10,7 @@ public:
     explicit IntroWizardPage(QWidget *parent = nullptr);
 
 signals:
-    void filenameReady();
+    void parseCircuit();
 
 protected:
     virtual bool isComplete() const override;
@@ -20,9 +20,9 @@ private:
     QRadioButton *parseButton;
     QRadioButton *loadFileButton;
     QLineEdit *fileLineEdit;
-    QString filename;
 
     QMessageBox *conf;
+    bool parseComplete = false;
 };
 
 #endif // INTROWIZARDPAGE_H

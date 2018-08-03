@@ -14,22 +14,25 @@ class SimulationWizard : public QWizard
 {
     Q_OBJECT
 public:
-    enum { Page_Intro, Page_SimOptions, Page_InitialConds, Page_SaveAs, Page_RunSim };
+    enum { Page_Intro, Page_SaveIntro, Page_SimOptions, Page_InitialConds, Page_SaveAs, Page_RunSim };
 
     explicit SimulationWizard(Netlist *netlist,
                               SpiceEngine *engine,
                               bool saveOnly,
-                              QGraphicsScene *schem,
                               QWidget *parent = nullptr);
-    void processInput();
-    QString getFilename() { return filename; }
 
 private:
-    Netlist *netlist;
-    QString filename;
     bool saveOnly;
+    IntroWizardPage *introPage;
 
     int nextId() const override;
+
+signals:
+    void parseCircuit();
+    void parseSuccess();
+
+public slots:
+    void emitParseCircuit() { emit parseCircuit(); }
 
 };
 

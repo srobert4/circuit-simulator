@@ -30,6 +30,7 @@ public:
     void deletePressed() { deleteSelection(); }
     void clearPressed() { deleteAll(); }
     void savePressed() { simulate(true); }
+
 protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
@@ -68,10 +69,9 @@ private:
 
     // Parsing
     void simulate(bool saveOnly = false);
-    int parse();
-    int parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *>&seen);
+    int _parse();
+    int _parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *>&seen);
     int showSimulationOptions();
-    CircuitElement *getStartingElement();
     void removeNodeLabels();
     bool parseErrorFlag = false;
 

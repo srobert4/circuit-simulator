@@ -4,11 +4,18 @@
 #include <QtWidgets>
 #include "netlist.h"
 
+/* Class: SimOptionsWizardPage
+ * ---------------------------
+ * Allows user to select DC or Transient
+ * analysis and set the relevant parameters
+ * for the chosen mode. The ngspice command
+ * is generated to be added to the netlist.
+ */
 class SimOptionsWizardPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netlist, bool saveOnly, QWidget *parent = nullptr);
+    explicit SimOptionsWizardPage(Netlist *netlist, QWidget *parent = nullptr);
 
 protected:
     virtual bool isComplete() const override;
@@ -16,11 +23,9 @@ protected:
     virtual void initializePage() override;
 
 private:
-    QGraphicsScene *schematic;
     Netlist *netlist;
     QFormLayout *layout;
     QLineEdit *outputLine;
-    bool saveOnly;
 
     QMap<QString, QString> simulationModes = {
         {"Transient", ".tran"},
@@ -34,11 +39,6 @@ private:
 
     QWidget *createTranExtension();
     QWidget *createDCExtension(QSet<QString> elements);
-
-signals:
-    void parseSchematic();
-
-public slots:
 };
 
 #endif // SIMOPTIONSWIZARDPAGE_H

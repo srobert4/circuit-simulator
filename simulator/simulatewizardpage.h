@@ -15,19 +15,18 @@ public:
 
 protected:
     virtual bool isComplete() const override;
-    virtual bool validatePage() override;
     virtual void initializePage() override;
 
 private:
-    SpiceEngine *engine;
-    Netlist *netlist;
-    QVBoxLayout *layout;
-    QProgressBar *progressBar;
-    QLineEdit *dumpFilenameLineEdit;
-    QLabel *resultsLabel;
-    QPushButton *saveButton;
-    QPushButton *plotButton;
-    QPushButton *pauseButton;
+    SpiceEngine *engine = nullptr;
+    Netlist *netlist = nullptr;
+    QVBoxLayout *layout = nullptr;
+    QProgressBar *progressBar = nullptr;
+    QLineEdit *dumpFilenameLineEdit = nullptr;
+    QLabel *resultsLabel = nullptr;
+    QPushButton *saveButton = nullptr;
+    QPushButton *plotButton = nullptr;
+    QPushButton *pauseButton = nullptr;
     bool running;
     bool resultsInitialized = false;
     QList<QString> vectors;

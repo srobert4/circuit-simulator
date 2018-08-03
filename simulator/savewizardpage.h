@@ -2,12 +2,13 @@
 #define SAVEWIZARDPAGE_H
 
 #include <QtWidgets>
+#include "netlist.h"
 
 class SaveWizardPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit SaveWizardPage(bool saveOnly, QWidget *parent = nullptr);
+    explicit SaveWizardPage(bool saveOnly, Netlist *netlist, QWidget *parent = nullptr);
     QString getName() {return nameLineEdit->text();}
     QString getFilename() {return saveDirLineEdit->text() + "/" + filenameLineEdit->text() + ".cir";}
 
@@ -21,12 +22,9 @@ private:
     QLineEdit *filenameLineEdit;
 
     bool saveOnly;
+    Netlist *netlist;
 
-
-signals:
-    void ready();
-
-public slots:
+    void saveNetlist();
 };
 
 #endif // SAVEWIZARDPAGE_H

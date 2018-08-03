@@ -6,6 +6,7 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     this->netlist = netlist;
     this->engine = engine;
 
+    // Initial start simulation widget
     QWidget *runWidget = new QWidget(this);
     QPushButton *runButton = new QPushButton("Click to Start Simulation", this);
     QCheckBox *dumpOutputCheckbox = new QCheckBox("Write simulation output to file?", this);
@@ -19,6 +20,7 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     runLayout->addWidget(dumpFilenameLineEdit);
     runWidget->setLayout(runLayout);
 
+    // Progress bar widget
     QWidget *progressWidget = new QWidget(this);
     progressBar = new QProgressBar(this);
     pauseButton = new QPushButton("Pause", this);
@@ -31,13 +33,19 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     progressWidget->setLayout(progressLayout);
     progressWidget->setHidden(true);
 
+    // Text about simulation
     resultsLabel = new QLabel(this);
 
+    // SIGNALS FROM WIDGETS
+    // runButton -> start the simulation and show the
+    // progress widget
     connect(runButton, &QPushButton::pressed, [=](){
         runWidget->setHidden(true);
         progressWidget->setVisible(true);
         startSimulation();
     });
+
+    // pauseButton -> pause/resume the simulation
     connect(pauseButton, &QPushButton::pressed, [=](){
         if (running) {
             stopSimulation();
@@ -47,11 +55,15 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
             pauseButton->setText("Pause");
         }
     });
+
+    // restartButton -> stop and restart simulation
     connect(restartButton, &QPushButton::pressed, [=](){
         stopSimulation();
         progressBar->setValue(0);
         startSimulation();
     });
+
+    // dumpOutputCheckbox -> show/hide dumpFilenameLineEdit
     connect(dumpOutputCheckbox, &QCheckBox::stateChanged, [=](){
         if (dumpOutputCheckbox->isChecked()) {
             dumpFilenameLineEdit->setVisible(true);
@@ -60,6 +72,7 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
         }
     });
 
+    // SIGNALS FROM ENGINE
     connect(engine, &SpiceEngine::statusUpdate,
             this, &SimulateWizardPage::updateStatus,
             Qt::QueuedConnection);
@@ -79,6 +92,12 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     setLayout(layout);
 }
 
+/* Private Function: startSimulation()
+ * -----------------------------------
+ * Start the simulation with the given
+ * circuit. Make sure the finish, plot and save
+ * buttons are disabled.
+ */
 void SimulateWizardPage::startSimulation()
 {
     if (plotButton && plotButton->isEnabled()) {
@@ -97,6 +116,11 @@ void SimulateWizardPage::startSimulation()
     emit completeChanged();
 }
 
+/* Private Function: continueSimulation()
+ * --------------------------------------
+ * Resume simulation after a pause. Disable
+ * finish, plot and save buttons.
+ */
 void SimulateWizardPage::continueSimulation()
 {
     plotButton->setEnabled(false);
@@ -107,6 +131,11 @@ void SimulateWizardPage::continueSimulation()
     emit completeChanged();
 }
 
+/* Private Function: stopSimulation()
+ * ----------------------------------
+ * Pause simulation. Enable finish, plot and
+ * save buttons.
+ */
 void SimulateWizardPage::stopSimulation()
 {
     engine->stopSimulation();
@@ -117,6 +146,11 @@ void SimulateWizardPage::stopSimulation()
     emit completeChanged();
 }
 
+/* Private Function: getPlotWidget()
+ * ---------------------------------
+ * Create and return the plot options
+ * widget.
+ */
 QWidget *SimulateWizardPage::getPlotWidget()
 {
     QWidget *plotWidget = new QWidget;
@@ -185,6 +219,10 @@ QWidget *SimulateWizardPage::getPlotWidget()
     return plotWidget;
 }
 
+/* Private Function: getSaveWidget()
+ * ---------------------------------
+ * Create and return save options widget
+ */
 QWidget *SimulateWizardPage::getSaveWidget()
 {
     QWidget *saveWidget = new QWidget;
@@ -227,6 +265,13 @@ QWidget *SimulateWizardPage::getSaveWidget()
     return saveWidget;
 }
 
+/* Private Function: save()
+ * ------------------------
+ * Save the selected vectors to file.
+ * Calls ngspice command "save".
+ * If no vectors are selected the user is
+ * offered the choice to save all or cancel.
+ */
 void SimulateWizardPage::save()
 {
     QList<QString> toWrite;
@@ -249,6 +294,12 @@ void SimulateWizardPage::save()
     saveButton->setText("Save");
 }
 
+/* Private Function: plot()
+ * ------------------------
+ * Plot the selected vectors. Optionally save results
+ * to file. If no vectors are selected, show user
+ * an error message and cancel.
+ */
 void SimulateWizardPage::plot()
 {
     QList<QString> toPlot;
@@ -272,6 +323,12 @@ void SimulateWizardPage::plot()
     plotButton->setText("Plot");
 }
 
+/* Private Function: initData()
+ * ----------------------------
+ * Print simulaiton init information to the wizard page
+ * Add vectors with checkboxes
+ * Add tab layout with plot and save options
+ */
 void SimulateWizardPage::initData()
 {
     disconnect(engine, &SpiceEngine::initDataReady,
@@ -297,6 +354,14 @@ void SimulateWizardPage::initData()
     layout->addWidget(tabs);
 }
 
+// ========== PROTECTED OVERRIDE ===========
+
+/* Protected Function: initializePage()
+ * ------------------------------------
+ * Get the default filename from the wizard fields
+ * to be used as save/plot filename suggestions.
+ * Set dump filename suggestion.
+ */
 void SimulateWizardPage::initializePage()
 {
     QString filename;
@@ -309,22 +374,29 @@ void SimulateWizardPage::initializePage()
     dumpFilenameLineEdit->setText(defaultFilename + "_dump.txt");
 }
 
-// ========== PROTECTED OVERRIDE ===========
-
+/* Protected Function: isComplete()
+ * --------------------------------
+ * Enable Finish button only if simulation
+ * is paused or complete
+ *
+ * For exit by error or (x) button the
+ * Schematic calls engine->stopSimulation()
+ * while cleaning up simulation.
+ */
 bool SimulateWizardPage::isComplete() const
 {
     if (!running) return true;
     return (progressBar->value() == 100);
 }
 
-bool SimulateWizardPage::validatePage()
-{
-    if (isComplete())
-        engine->stopSimulation();
-    return isComplete();
-}
-
 // ============ SLOTS ==================
+
+/* Slot: updateStatus(int)
+ * -----------------------
+ * Gets progress from engine and updates
+ * progress bar.
+ * Handles complete simulations
+ */
 void SimulateWizardPage::updateStatus(int progress)
 {
     progressBar->setValue(progress);
@@ -336,6 +408,10 @@ void SimulateWizardPage::updateStatus(int progress)
     emit completeChanged();
 }
 
+/* Slot: receiveError(char *)
+ * --------------------------
+ * Display error received from engine in a critical message popup
+ */
 void SimulateWizardPage::receiveError(char *errormsg){
     QMessageBox *box = new QMessageBox(QMessageBox::Critical, "Spice Error", errormsg);
     box->exec();

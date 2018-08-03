@@ -15,8 +15,6 @@ int thread_runs(bool noruns, int ident, void *userdata);
 int initdata(pvecinfoall intdata, int ident, void *userdata);
 int data(pvecvaluesall vdata, int numvecs, int ident, void *userdata);
 int getvoltage(double *voltage, double t, char *node, int ident, void *userdata);
-int cieq(register char *p, register char *s);
-int ciprefix(const char *p, const char *s);
 
 class SpiceEngine : public QObject
 {
@@ -53,10 +51,10 @@ public:
 
 private:
     // convenience wrappers around ngspice functions
-    int command(QString command) { return ngSpice_Command((char *)command.toLatin1().data()); }
-    int run() { return ngSpice_Command((char *)"bg_run"); }
-    int halt() { return ngSpice_Command((char *)"bg_halt"); }
-    int resume() { return ngSpice_Command((char *)"bg_resume"); }
+    int command(QString command) { return ngSpice_Command(const_cast<char *>(command.toLatin1().data())); }
+    int run() { return ngSpice_Command(const_cast<char *>("bg_run")); }
+    int halt() { return ngSpice_Command(const_cast<char *>("bg_halt")); }
+    int resume() { return ngSpice_Command(const_cast<char *>("bg_resume")); }
 
     QMap<QString, BoundaryCondition *> *bcs;
     QString filename;

@@ -19,11 +19,17 @@ ICWizardPage::ICWizardPage(Netlist *netlist, QWidget *parent) : QWizardPage(pare
     setLayout(layout);
 }
 
+/* inititalizePage()
+ * -----------------
+ * Once the netlist has been loaded, the lineedits
+ * for each node can be added
+ */
 void ICWizardPage::initializePage()
 {
     QFormLayout *formLayout = new QFormLayout;
     foreach(QString node, netlist->getNodeNames()) {
         QLineEdit *line = new QLineEdit(this);
+        connect(line, &QLineEdit::textEdited, [this](){emit completeChanged();});
         formLayout->addRow("Node " + node, line);
         registerField(node, line);
     }
@@ -31,7 +37,27 @@ void ICWizardPage::initializePage()
 
 }
 
+/* isComplete()
+ * ------------
+ * Only allow the user to click next
+ * if all lineEdits are empty or contain
+ * a valid numeric string.
+ */
+bool ICWizardPage::isComplete() const
+{
+    bool ok = true;
+    foreach(QString node, netlist->getNodeNames()) {
+        QString value = field(node).toString();
+        if (value.isEmpty()) continue;
+        value.toDouble(&ok);
+    }
+    return ok;
+}
 
+/* validatePage()
+ * --------------
+ * Set outputLine text to ngspice command to set initial conditions
+ */
 bool ICWizardPage::validatePage()
 {
     QString line = ".ic";
