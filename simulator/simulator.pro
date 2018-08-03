@@ -38,7 +38,8 @@ SOURCES += \
     simulatewizardpage.cpp \
     simoptionswizardpage.cpp \
     icwizardpage.cpp \
-    spiceengine.cpp
+    spiceengine.cpp \
+    saveintrowizardpage.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -55,7 +56,8 @@ HEADERS += \
     simulatewizardpage.h \
     simoptionswizardpage.h \
     icwizardpage.h \
-    spiceengine.h
+    spiceengine.h \
+    saveintrowizardpage.h
 
 RESOURCES += \
     images.qrc

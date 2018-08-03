@@ -2,6 +2,7 @@
 
 SaveWizardPage::SaveWizardPage(bool saveOnly, QWidget *parent) : QWizardPage(parent)
 {
+    this->saveOnly = saveOnly;
     setTitle("Save Your Circuit");
     setCommitPage(true);
     setButtonText(QWizard::CommitButton, "&Run >");
@@ -66,7 +67,7 @@ bool SaveWizardPage::validatePage() {
     if (saveDirLineEdit->text() == "" ||
             filenameLineEdit->text() == "") return false;
     if (!QDir(saveDirLineEdit->text()).exists()) return false;
-    if (QMessageBox::question(this,
+    if (!saveOnly && QMessageBox::question(this,
                                  "Start simulation?",
                                  "Continue?\nYou will not be able to return to this page",
                                  (QMessageBox::Cancel | QMessageBox::Yes)) == QMessageBox::Cancel) return false;

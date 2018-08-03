@@ -20,7 +20,7 @@ private:
     QLineEdit *saveDirLineEdit;
     QLineEdit *filenameLineEdit;
 
-    QMessageBox *conf;
+    bool saveOnly;
 
 
 signals:

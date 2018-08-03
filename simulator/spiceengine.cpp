@@ -39,6 +39,11 @@ void SpiceEngine::startSimulation(Netlist *netlist, bool dump, QString dumpFilen
     pthread_mutex_unlock(&mutex);
 }
 
+void SpiceEngine::resumeSimulation()
+{
+    resume();
+}
+
 void SpiceEngine::stopSimulation()
 {
     if (no_bg) return;

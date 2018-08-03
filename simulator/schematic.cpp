@@ -145,6 +145,8 @@ void Schematic::simulate(bool saveOnly)
     if (netlist != nullptr) delete netlist;
     netlist = new Netlist();
 
+    if (saveOnly) parseSchematic();
+
     // Show options dialog box
     simulationOptions = new SimulationWizard(netlist, spiceEngine, saveOnly, this);
     if (!parseErrorFlag) {
@@ -156,6 +158,7 @@ void Schematic::simulate(bool saveOnly)
 
     delete simulationOptions;
     simulationOptions = nullptr;
+    spiceEngine->stopSimulation(); // in case of bad close
     removeNodeLabels();
     parseErrorFlag = false;
 }

@@ -32,6 +32,7 @@ public:
     void getVoltage(double *voltage, double t, char *node);
     bool running() { return no_bg; }
     void stopSimulation();
+    void resumeSimulation();
     QList<QString> getAvailableGraphs();
     void graph(QString node);
     QString curPlot() { return QString(ngSpice_CurPlot()); }

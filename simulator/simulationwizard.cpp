@@ -4,13 +4,16 @@ SimulationWizard::SimulationWizard(Netlist *netlist, SpiceEngine *engine, bool s
 {
     this->netlist = netlist;
     this->saveOnly = saveOnly;
+
     resize(500, 550);
 
     if (!saveOnly) {
         setPage(Page_Intro, new IntroWizardPage);
+    } else {
+        setPage(Page_Intro, new SaveIntroWizardPage);
     }
 
-    setPage(Page_SimOptions, new SimOptionsWizardPage(schem, netlist));
+    setPage(Page_SimOptions, new SimOptionsWizardPage(schem, netlist, saveOnly));
 
     setPage(Page_InitialConds, new ICWizardPage(netlist));
 
@@ -25,9 +28,11 @@ SimulationWizard::SimulationWizard(Netlist *netlist, SpiceEngine *engine, bool s
     setPage(Page_RunSim, new SimulateWizardPage(engine, netlist));
 
     setWindowTitle("Simulation Wizard");
-    setOption(QWizard::IndependentPages); // only run initializePage() once for each page.
-                                          // Dependent upon disabled back button on simoptions
-                                          // and sim pages.
+    // QWizard::IndependentPages:
+    // only run initializePage() once for each page.
+    // Dependent upon disabled back button on simoptions
+    // and sim pages.
+    setOptions(QWizard::IndependentPages | QWizard::NoCancelButtonOnLastPage);
     show();
 }
 
@@ -36,9 +41,15 @@ int SimulationWizard::nextId() const
     switch(currentId())
     {
     case Page_Intro:
-        if (field("parseCircuit").toBool())
+        if (saveOnly) {
+            if (field("addSim").toBool())
+                return Page_SimOptions;
+            return Page_SaveAs;
+        } else {
+            if (field("loadCircuit").toBool())
+                return Page_RunSim;
             return Page_SimOptions;
-        return Page_RunSim;
+        }
 
     case Page_SimOptions:
         return Page_InitialConds;

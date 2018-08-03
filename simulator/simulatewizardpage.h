@@ -27,13 +27,16 @@ private:
     QLabel *resultsLabel;
     QPushButton *saveButton;
     QPushButton *plotButton;
+    QPushButton *pauseButton;
     bool running;
+    bool resultsInitialized = false;
     QList<QString> vectors;
     QMap<QString, bool> selectedVectors;
     QString defaultFilename;
 
-    void runSimulation();
-    void cancelSimulation();
+    void startSimulation();
+    void continueSimulation();
+    void stopSimulation();
     void showResults();
     void initData();
     void writeVectors();

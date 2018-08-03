@@ -21,11 +21,13 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
 
     QWidget *progressWidget = new QWidget(this);
     progressBar = new QProgressBar(this);
-    QPushButton *cancelButton = new QPushButton("Cancel", this);
+    pauseButton = new QPushButton("Pause", this);
+    QPushButton *restartButton = new QPushButton("Restart", this);
     QHBoxLayout *progressLayout = new QHBoxLayout;
-    progressLayout->addWidget(progressBar);
+    progressLayout->addWidget(progressBar, 1);
     progressBar->setRange(0, 100);
-    progressLayout->addWidget(cancelButton);
+    progressLayout->addWidget(pauseButton);
+    progressLayout->addWidget(restartButton);
     progressWidget->setLayout(progressLayout);
     progressWidget->setHidden(true);
 
@@ -34,12 +36,21 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     connect(runButton, &QPushButton::pressed, [=](){
         runWidget->setHidden(true);
         progressWidget->setVisible(true);
-        runSimulation();
+        startSimulation();
     });
-    connect(cancelButton, &QPushButton::pressed, [=](){
-        runWidget->setVisible(true);
-        progressWidget->setHidden(true);
-        cancelSimulation();
+    connect(pauseButton, &QPushButton::pressed, [=](){
+        if (running) {
+            stopSimulation();
+            pauseButton->setText("Continue");
+        } else {
+            continueSimulation();
+            pauseButton->setText("Pause");
+        }
+    });
+    connect(restartButton, &QPushButton::pressed, [=](){
+        stopSimulation();
+        progressBar->setValue(0);
+        startSimulation();
     });
     connect(dumpOutputCheckbox, &QCheckBox::stateChanged, [=](){
         if (dumpOutputCheckbox->isChecked()) {
@@ -68,9 +79,12 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     setLayout(layout);
 }
 
-void SimulateWizardPage::runSimulation()
+void SimulateWizardPage::startSimulation()
 {
-    running = true;
+    if (plotButton && plotButton->isEnabled()) {
+        plotButton->setEnabled(false);
+        saveButton->setEnabled(false);
+    }
     if (field("loadCircuit").toBool()) {
         // TODO: allow user to provide filename for any External input elements
         // create bcs map, and pass a pointer to this function.
@@ -78,18 +92,29 @@ void SimulateWizardPage::runSimulation()
     } else {
         engine->startSimulation(netlist, field("dumpOutput").toBool(), field("dumpFilename").toString());
     }
+    running = true;
+
+    emit completeChanged();
 }
 
-void SimulateWizardPage::cancelSimulation()
+void SimulateWizardPage::continueSimulation()
+{
+    plotButton->setEnabled(false);
+    saveButton->setEnabled(false);
+    engine->resumeSimulation();
+    running = true;
+
+    emit completeChanged();
+}
+
+void SimulateWizardPage::stopSimulation()
 {
     engine->stopSimulation();
     running = false;
-}
-
-void SimulateWizardPage::showResults()
-{
     plotButton->setEnabled(true);
     saveButton->setEnabled(true);
+
+    emit completeChanged();
 }
 
 QWidget *SimulateWizardPage::getPlotWidget()
@@ -249,6 +274,9 @@ void SimulateWizardPage::plot()
 
 void SimulateWizardPage::initData()
 {
+    disconnect(engine, &SpiceEngine::initDataReady,
+            this, &SimulateWizardPage::initData);
+
     resultsLabel->setText(engine->getPlotInfo() + "\n\nVectors:");
     vectors = engine->vectors();
     for (int i = 0; i < vectors.length(); i++) {
@@ -300,7 +328,11 @@ bool SimulateWizardPage::validatePage()
 void SimulateWizardPage::updateStatus(int progress)
 {
     progressBar->setValue(progress);
-    if (progress == 100) showResults();
+    if (progress == 100) {
+        plotButton->setEnabled(true);
+        saveButton->setEnabled(true);
+        pauseButton->setEnabled(false);
+    }
     emit completeChanged();
 }
 

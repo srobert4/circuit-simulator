@@ -8,7 +8,7 @@ class SimOptionsWizardPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netlist, QWidget *parent = nullptr);
+    explicit SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netlist, bool saveOnly, QWidget *parent = nullptr);
 
 protected:
     virtual bool isComplete() const override;
@@ -20,6 +20,7 @@ private:
     Netlist *netlist;
     QFormLayout *layout;
     QLineEdit *outputLine;
+    bool saveOnly;
 
     QMap<QString, QString> simulationModes = {
         {"Transient", ".tran"},

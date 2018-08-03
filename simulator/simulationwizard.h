@@ -8,6 +8,7 @@
 #include "simulatewizardpage.h"
 #include "simoptionswizardpage.h"
 #include "icwizardpage.h"
+#include "saveintrowizardpage.h"
 
 class SimulationWizard : public QWizard
 {
@@ -30,8 +31,6 @@ private:
 
     int nextId() const override;
 
-
-signals:
 };
 
 #endif // SIMULATIONOPTIONSDIALOG_H

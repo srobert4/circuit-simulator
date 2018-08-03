@@ -1,9 +1,10 @@
 #include "simoptionswizardpage.h"
 
-SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netlist, QWidget *parent) : QWizardPage(parent)
+SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netlist, bool saveOnly, QWidget *parent) : QWizardPage(parent)
 {
     schematic = schem;
     this->netlist = netlist;
+    this->saveOnly = saveOnly;
     setTitle("Set Simulation Mode");
 
     QComboBox *simulationTypeComboBox = new QComboBox(this);
@@ -42,7 +43,8 @@ SimOptionsWizardPage::SimOptionsWizardPage(QGraphicsScene *schem, Netlist *netli
 
 void SimOptionsWizardPage::initializePage()
 {
-    connect(this, SIGNAL(parseSchematic()), schematic, SLOT(parseSchematic()));
+    if (!saveOnly)
+        connect(this, SIGNAL(parseSchematic()), schematic, SLOT(parseSchematic()));
     emit parseSchematic();
 
     QApplication::processEvents();
