@@ -1,14 +1,18 @@
 #include "simulationwizard.h"
 
-SimulationWizard::SimulationWizard(Netlist *netlist, SpiceEngine *engine, bool saveOnly, QWidget *parent) : QWizard(parent)
+SimulationWizard::SimulationWizard(Netlist *netlist,
+                                   SpiceEngine *engine,
+                                   bool saveOnly,
+                                   QWidget *parent) : QWizard(parent)
 {
     this->saveOnly = saveOnly;
 
     if (!saveOnly) resize(500, 550);
 
     if (!saveOnly) {
-        IntroWizardPage *introPage = new IntroWizardPage;
-        connect(introPage, &IntroWizardPage::parseCircuit, this, &SimulationWizard::emitParseCircuit);
+        IntroWizardPage *introPage = new IntroWizardPage(&bcMap);
+        connect(introPage, &IntroWizardPage::parseCircuit,
+                this, &SimulationWizard::emitParseCircuit);
         setPage(Page_Intro, introPage);
     } else {
         setPage(Page_SaveIntro, new SaveIntroWizardPage);
@@ -20,7 +24,7 @@ SimulationWizard::SimulationWizard(Netlist *netlist, SpiceEngine *engine, bool s
 
     setPage(Page_SaveAs, new SaveWizardPage(saveOnly, netlist));
 
-    setPage(Page_RunSim, new SimulateWizardPage(engine, netlist));
+    setPage(Page_RunSim, new SimulateWizardPage(engine, netlist, &bcMap));
 
     setWindowTitle("Simulation Wizard");
     // QWizard::IndependentPages:
@@ -46,7 +50,9 @@ int SimulationWizard::nextId() const
         return Page_SaveAs;
 
     case Page_SimOptions:
-        return Page_InitialConds;
+        if(field("simulationType").toString() == "Transient")
+            return Page_InitialConds;
+        return Page_SaveAs;
     case Page_InitialConds:
         return Page_SaveAs;
     case Page_SaveAs:

@@ -5,6 +5,7 @@
 #include <QtWidgets>
 
 #include "node.h"
+#include "boundarycondition.h"
 
 class CircuitElement : public SchematicItem
 {
@@ -48,7 +49,6 @@ public:
     QString getName() { return prefix + name; }
     QString getValue() { return value + unitMod; }
     QString getExternalFile() { return externalFile; }
-    double getPeriod() { return periodLineEdit->text().toDouble(); }
 
 protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
@@ -80,7 +80,6 @@ private:
     QLineEdit *nameLineEdit;
     QLineEdit *valueLineEdit;
     QLineEdit *valueFileLineEdit;
-    QLineEdit *periodLineEdit;
     QComboBox *unitsComboBox;
     QList<QString> unitModifiers;
     QWidget *constValueExt;

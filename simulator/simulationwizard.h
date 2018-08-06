@@ -24,6 +24,7 @@ public:
 private:
     bool saveOnly;
     IntroWizardPage *introPage;
+    QMap<QString, BoundaryCondition *> bcMap;
 
     int nextId() const override;
 

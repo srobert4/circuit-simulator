@@ -1,10 +1,14 @@
 #include "simulatewizardpage.h"
 
-SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QWidget *parent) : QWizardPage(parent)
+SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine,
+                                       Netlist *netlist,
+                                       QMap<QString, BoundaryCondition *> *bcMap,
+                                       QWidget *parent) : QWizardPage(parent)
 {
     setTitle("Run your simulation");
     this->netlist = netlist;
     this->engine = engine;
+    this->bcMap = bcMap;
 
     // Initial start simulation widget
     QWidget *runWidget = new QWidget(this);
@@ -47,7 +51,7 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
 
     // pauseButton -> pause/resume the simulation
     connect(pauseButton, &QPushButton::pressed, [=](){
-        if (running) {
+        if (engine->running()) {
             stopSimulation();
             pauseButton->setText("Continue");
         } else {
@@ -92,6 +96,13 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine, Netlist *netlist, QW
     setLayout(layout);
 }
 
+void SimulateWizardPage::showErrorMessage()
+{
+    QString message;
+    engine->getErrorStatus(message);
+    QMessageBox::critical(this, "Simulation Error", message);
+}
+
 /* Private Function: startSimulation()
  * -----------------------------------
  * Start the simulation with the given
@@ -104,14 +115,20 @@ void SimulateWizardPage::startSimulation()
         plotButton->setEnabled(false);
         saveButton->setEnabled(false);
     }
+    int ret;
     if (field("loadCircuit").toBool()) {
         // TODO: allow user to provide filename for any External input elements
         // create bcs map, and pass a pointer to this function.
-        engine->startSimulation(field("filename").toString(), nullptr, field("dumpOutput").toBool(), field("dumpFilename").toString());
+        ret = engine->startSimulation(field("filename").toString(),
+                                          bcMap,
+                                          field("dumpOutput").toBool(),
+                                          field("dumpFilename").toString());
     } else {
-        engine->startSimulation(netlist, field("dumpOutput").toBool(), field("dumpFilename").toString());
+        ret = engine->startSimulation(netlist,
+                                      field("dumpOutput").toBool(),
+                                      field("dumpFilename").toString());
     }
-    running = true;
+    if (ret != 0) showErrorMessage();
 
     emit completeChanged();
 }
@@ -125,8 +142,8 @@ void SimulateWizardPage::continueSimulation()
 {
     plotButton->setEnabled(false);
     saveButton->setEnabled(false);
-    engine->resumeSimulation();
-    running = true;
+    int ret = engine->resumeSimulation();
+    if (ret != 0) showErrorMessage();
 
     emit completeChanged();
 }
@@ -138,8 +155,8 @@ void SimulateWizardPage::continueSimulation()
  */
 void SimulateWizardPage::stopSimulation()
 {
-    engine->stopSimulation();
-    running = false;
+    int ret = engine->stopSimulation();
+    if (ret != 0) showErrorMessage();
     plotButton->setEnabled(true);
     saveButton->setEnabled(true);
 
@@ -280,7 +297,9 @@ void SimulateWizardPage::save()
             toWrite.append(selectedVectors.keys()[i]);
     }
     if (toWrite.empty()) {
-        int ret = QMessageBox::question(this, "Save all?", "No vectors selected. Save all vectors?",
+        int ret = QMessageBox::question(this,
+                                        "Save all?",
+                                        "No vectors selected. Save all vectors?",
                                         (QMessageBox::Yes | QMessageBox::Cancel));
         if (ret == QMessageBox::Cancel) return;
     }
@@ -288,8 +307,16 @@ void SimulateWizardPage::save()
     saveButton->setText("Saving...");
     update();
     QApplication::processEvents();
-    engine->saveResults(toWrite, field("saveFormat").toString() == "Compact Binary", field("saveResultsFilename").toString());
-    QMessageBox::information(this, "Save successful", "Your results have been saved!");
+    int ret = engine->saveResults(toWrite,
+                                  field("saveFormat").toString() == "Compact Binary",
+                                  field("saveResultsFilename").toString());
+    if (ret != 0) {
+        showErrorMessage();
+    } else {
+        QMessageBox::information(this,
+                                 "Save successful",
+                                 "Your results have been saved!");
+    }
 
     saveButton->setText("Save");
 }
@@ -308,7 +335,10 @@ void SimulateWizardPage::plot()
             toPlot.append(selectedVectors.keys()[i]);
     }
     if (toPlot.empty()) {
-        QMessageBox::critical(this, "Error", "No vectors selected. Check the vectors you want to plot.");
+        QMessageBox::critical(this,
+                              "Error",
+                              "No vectors selected. "
+                              "Check the vectors you want to plot.");
         return;
     }
 
@@ -316,9 +346,13 @@ void SimulateWizardPage::plot()
     update();
     QApplication::processEvents();
 
-    QString filename = (field("savePlot").toBool() ? field("plotFilename").toString() : "/tmp/gnuout");
+    QString filename = (field("savePlot").toBool() ?
+                            field("plotFilename").toString() : "/tmp/gnuout");
     if (filename.isEmpty()) filename = "/tmp/gnuout";
-    engine->plotResults(toPlot, field("plotFormat").toString() == "PNG", filename);
+    int ret = engine->plotResults(toPlot,
+                                  field("plotFormat").toString() == "PNG",
+                                  filename);
+    if (ret != 0) showErrorMessage();
 
     plotButton->setText("Plot");
 }
@@ -385,7 +419,7 @@ void SimulateWizardPage::initializePage()
  */
 bool SimulateWizardPage::isComplete() const
 {
-    if (!running) return true;
+    if (!engine->running()) return true;
     return (progressBar->value() == 100);
 }
 
@@ -412,8 +446,8 @@ void SimulateWizardPage::updateStatus(int progress)
  * --------------------------
  * Display error received from engine in a critical message popup
  */
-void SimulateWizardPage::receiveError(char *errormsg){
-    QMessageBox *box = new QMessageBox(QMessageBox::Critical, "Spice Error", errormsg);
-    box->exec();
-    delete box;
+void SimulateWizardPage::receiveError(QString errormsg){
+    qInfo() << errormsg;
+    QMessageBox::critical(this, "Simulation Error", errormsg);
+    wizard()->close();
 }

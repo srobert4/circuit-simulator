@@ -9,8 +9,10 @@ class BoundaryCondition : public QObject
 {
     Q_OBJECT
 public:
-    explicit BoundaryCondition(QString filename, qreal period, QObject *parent = nullptr);
+    explicit BoundaryCondition(QString filename,
+                               QObject *parent = nullptr);
     double getState(double time);
+    static bool checkFile(QString filename);
 
 private:
     QMap<qreal, qreal> states;

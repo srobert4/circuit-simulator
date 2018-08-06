@@ -1,15 +1,14 @@
 #include "boundarycondition.h"
 
 BoundaryCondition::BoundaryCondition(QString filename,
-                                     qreal period,
                                      QObject *parent) : QObject(parent)
 {
-    this->period = period;
-    qInfo() << "filename in boundarycondition.cpp: " << filename;
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return;
 
+    qreal maxTime = 0;
+    qreal step = 0;
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
@@ -18,8 +17,33 @@ BoundaryCondition::BoundaryCondition(QString filename,
             emit badFile();
             return;
         }
-        states[tokens[0].toInt()] = tokens[1].toInt();
+        qreal time = tokens[0].toDouble();
+        step = time - maxTime;
+        maxTime = time > maxTime ? time : maxTime;
+        states[time] = tokens[1].toDouble();
     }
+    this->period = maxTime + step;
+}
+
+ bool BoundaryCondition::checkFile(QString filename)
+{
+     QFile file(filename);
+     if (!file.open(QFile::ReadOnly | QIODevice::Text)) return false;
+     QTextStream in(&file);
+     bool ok = true;
+     while(!in.atEnd()){
+         QStringList tokens = in.readLine().split("\t");
+         if (tokens.length() != 2) {
+             ok = false;
+             break;
+         }
+         tokens[0].toDouble(&ok);
+         if (!ok) break;
+         tokens[1].toDouble(&ok);
+         if (!ok) break;
+     }
+     file.close();
+     return ok;
 }
 
 double BoundaryCondition::getState(double time)

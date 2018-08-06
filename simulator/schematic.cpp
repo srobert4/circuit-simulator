@@ -13,6 +13,12 @@ Schematic::Schematic(QObject *parent)
     simulationOptions = nullptr;
     mode = Schematic::Edit;
     spiceEngine = new SpiceEngine(this);
+    QString errorMsg;
+    if (spiceEngine->getErrorStatus(errorMsg))
+        QMessageBox::critical(nullptr,
+                              "Simulator Error",
+                              "Initialization of simulator failed. "
+                              "Simulations not possible in this session.");
 }
 
 // ============ PUBLIC FUNCTIONS ================================
@@ -168,9 +174,12 @@ void Schematic::simulate(bool saveOnly)
     }
 
     // Clean up
+    int ret = spiceEngine->stopSimulation(); // in case of bad close
+    if (ret != 0) QMessageBox::warning(simulationOptions,
+                                       "Simulator Error",
+                                       "There was a problem shutting down the simulation engine.");
     delete simulationOptions;
     simulationOptions = nullptr;
-    spiceEngine->stopSimulation(); // in case of bad close
     removeNodeLabels();
     parseErrorFlag = false;
 }

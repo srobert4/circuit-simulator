@@ -11,6 +11,7 @@ class SimulateWizardPage : public QWizardPage
 public:
     explicit SimulateWizardPage(SpiceEngine *engine = nullptr,
                                 Netlist *netlist = nullptr,
+                                QMap<QString, BoundaryCondition *> *bcMap = nullptr,
                                 QWidget *parent = nullptr);
 
 protected:
@@ -20,6 +21,8 @@ protected:
 private:
     SpiceEngine *engine = nullptr;
     Netlist *netlist = nullptr;
+    QMap<QString, BoundaryCondition *> *bcMap;
+
     QVBoxLayout *layout = nullptr;
     QProgressBar *progressBar = nullptr;
     QLineEdit *dumpFilenameLineEdit = nullptr;
@@ -33,6 +36,8 @@ private:
     QMap<QString, bool> selectedVectors;
     QString defaultFilename;
 
+    void showErrorMessage();
+
     void startSimulation();
     void continueSimulation();
     void stopSimulation();
@@ -45,9 +50,13 @@ private:
     QWidget *getPlotWidget();
     QWidget *getSaveWidget();
 
+    void parseBoundaryConditions(QString filename,
+                                 QMap<QString, BoundaryCondition *> *bcMap);
+    QString getFile(QString node);
+
 private slots:
     void updateStatus(int progress);
-    void receiveError(char *errormsg);
+    void receiveError(QString errormsg);
 };
 
 #endif // SIMULATEWIZARDPAGE_H

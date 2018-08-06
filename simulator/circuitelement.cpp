@@ -210,7 +210,6 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
         browserLayout->addWidget(valueFileLineEdit);
         browserLayout->addWidget(browseButton);
         browser->setLayout(browserLayout);
-        periodLineEdit = new QLineEdit(dialog);
         QFormLayout *extValueLayout = new QFormLayout;
 
         connect(browseButton, &QPushButton::pressed,
@@ -221,7 +220,6 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
                                                         "All files (*.*)") ); });
 
         extValueLayout->addRow("Input file: ", browser);
-        extValueLayout->addRow("Period: ", periodLineEdit);
         extValueExt->setLayout(extValueLayout);
 
         // --- CONNECT EXTENSIONS ---
@@ -244,16 +242,20 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
                        QFile::exists(valueFileLineEdit->text()));
         });
         connect(valueFileLineEdit, &QLineEdit::textChanged, [=](){
-            bool periodOk;
-            periodLineEdit->text().toDouble(&periodOk);
             doneButton->setEnabled(valueFileLineEdit->text() != "" &&
-                        QFile::exists(valueFileLineEdit->text()) && periodOk);
+                        QFile::exists(valueFileLineEdit->text()));
         });
-        connect(periodLineEdit, &QLineEdit::textChanged, [=](){
-            bool periodOk;
-            periodLineEdit->text().toDouble(&periodOk);
-            doneButton->setEnabled(valueFileLineEdit->text() != "" &&
-                        QFile::exists(valueFileLineEdit->text()) && periodOk);
+        connect(doneButton, &QPushButton::pressed, [=](){
+            if (BoundaryCondition::checkFile(valueFileLineEdit->text())) {
+                dialog->accept();
+                return;
+            }
+            doneButton->setEnabled(false);
+            QMessageBox::warning(nullptr,
+                                 "Bad Input File",
+                                 "The input file provided is not correctly"
+                                 " formatted. Format should be: <time>\\t"
+                                 "<value>. Please provide a valid file.");
         });
     } else {
         constValueExt = nullptr;
@@ -308,6 +310,15 @@ void CircuitElement::processDialogInput()
         value = "External";
         label->setText(prefix + name + "\n" + value);
         externalFile = valueFileLineEdit->text();
+        if (!BoundaryCondition::checkFile(externalFile)) {
+            QMessageBox::warning(nullptr,
+                                 "Bad Input File",
+                                 "The input file provided is not correctly"
+                                 " formatted. Format should be: <time>\\t"
+                                 "<value>. Please provide a valid file.");
+            externalFile = "";
+            valueFileLineEdit->setText("");
+        }
     } else {
         label->setText(prefix + name + "\n" + value + unitMod + units);
     }

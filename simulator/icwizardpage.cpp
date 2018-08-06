@@ -5,9 +5,8 @@ ICWizardPage::ICWizardPage(Netlist *netlist, QWidget *parent) : QWizardPage(pare
     this->netlist = netlist;
     setTitle("Set Initial Conditions");
 
-    QLabel *label = new QLabel("Each node is labelled on the schematic. For any nodes "
-                               "for which you want to set the initial pressure, enter "
-                               "the pressure value in the corresponding box below.", this);
+    QLabel *label = new QLabel("Each node is labelled on the schematic. "
+                               "Set initial pressures below.", this);
     label->setWordWrap(true);
 
     layout = new QVBoxLayout;

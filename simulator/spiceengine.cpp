@@ -2,69 +2,139 @@
 
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
-    int ret;
-    ret = ngSpice_Init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
-    ret = ngSpice_Init_Sync(getvoltage, nullptr, nullptr, nullptr, this);
+    ngSpice_Init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
+    ngSpice_Init_Sync(getvoltage, nullptr, nullptr, nullptr, this);
 }
 
-void SpiceEngine::startSimulation(QString filename,
+void SpiceEngine::setErrorFlag(QString message)
+{
+    errorFlag = true;
+    errorMsg = message;
+}
+
+bool SpiceEngine::getErrorStatus(QString &message)
+{
+    if (errorFlag) message = errorMsg;
+    return errorFlag;
+}
+
+int SpiceEngine::startSimulation(QString filename,
                                   const QMap<QString, BoundaryCondition *> *bcs,
                                   bool dump, QString dumpFilename)
 {
     this->dump = dump;
     this->dumpFilename = dumpFilename;
+    this->bcs = bcs;
     int ret = command("source " + filename);
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error loading circuit file");
+        return ret;
+    }
     pthread_mutex_lock(&mutex);
     ret = run();
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error running simulation");
+        pthread_mutex_unlock(&mutex);
+        return ret;
+    }
     // wait for background thread to start
     while(no_bg) {
         pthread_cond_wait(&cond, &mutex);
     }
     pthread_mutex_unlock(&mutex);
+
+    return 0;
 }
 
-void SpiceEngine::startSimulation(Netlist *netlist, bool dump, QString dumpFilename)
+int SpiceEngine::startSimulation(Netlist *netlist, bool dump, QString dumpFilename)
 {
     this->dump = dump;
     this->dumpFilename = dumpFilename;
     filename = netlist->getFilename();
     this->netlist = netlist;
     int ret = command("source " + filename);
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error loading circuit file");
+        return ret;
+    }
     pthread_mutex_lock(&mutex);
     ret = run();
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error running simulation");
+        pthread_mutex_unlock(&mutex);
+        return ret;
+    }
     // wait for background thread to start
     while(no_bg) {
         pthread_cond_wait(&cond, &mutex);
     }
     pthread_mutex_unlock(&mutex);
+
+    return 0;
 }
 
-void SpiceEngine::resumeSimulation()
+int SpiceEngine::resumeSimulation()
 {
-    resume();
+    int ret = resume();
+    if (ret != 0) setErrorFlag("NGSPICE: Error resuming simulation");
+    return ret;
 }
 
-void SpiceEngine::stopSimulation()
+int SpiceEngine::stopSimulation()
 {
-    if (no_bg) return;
-    halt(); // note: halt will not return until no_bg == true
+    if (no_bg) return 0;
+    int ret = halt(); // note: halt will not return until no_bg == true
+    if (ret != 0) setErrorFlag("NGSPICE: Error halting simulation");
+    return ret;
 }
 
-void SpiceEngine::saveResults(QList<QString> vecs, bool bin, QString filename)
+int SpiceEngine::saveResults(QList<QString> vecs, bool bin, QString filename)
 {
     QString command = "write " + filename + " ";
     foreach(QString vec, vecs) command += vec + " ";
-    if (!bin) this->command("set filetype=ascii");
-    this->command(command);
+    int ret;
+    if (!bin) ret = this->command("set filetype=ascii");
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error changing ngspice settings");
+        return ret;
+    }
+    ret = this->command(command);
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error saving vectors");
+        return ret;
+    }
+    ret = this->command("set filetype=binary");
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error changing ngspice settings");
+        return ret;
+    }
+
+    return 0;
 }
 
-void SpiceEngine::plotResults(QList<QString> vecs, bool png, QString filename)
+int SpiceEngine::plotResults(QList<QString> vecs, bool png, QString filename)
 {
     QString command = "gnuplot " + filename + " ";
     foreach(QString vec, vecs) command += vec + " ";
-    if (png) this->command("set gnuplot_terminal=png");
-    this->command(command);
-    if (png) this->command("set gnuplot_terminal=eps");
+    int ret;
+    if (png) ret = this->command("set gnuplot_terminal=png");
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error changing ngspice settings");
+        return ret;
+    }
+    ret = this->command(command);
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error plotting vectors");
+        return ret;
+    }
+    if (png) ret = this->command("set gnuplot_terminal=eps");
+    if (ret != 0) {
+        setErrorFlag("NGSPICE: Error changing ngspice settings");
+        return ret;
+    }
+
+    return 0;
+
 }
 void SpiceEngine::emitStatusUpdate(char *status)
 {
@@ -82,7 +152,7 @@ void SpiceEngine::emitStatusUpdate(char *status)
 void SpiceEngine::writeOutput(char *output)
 {
     if (QString(output).startsWith("stderr Error:", Qt::CaseInsensitive))
-        emit spiceError(output);
+        emit spiceError(QString(output));
     if (!dump) return;
     QFile file(dumpFilename);
     if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
