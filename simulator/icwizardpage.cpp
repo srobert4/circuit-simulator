@@ -18,6 +18,8 @@ ICWizardPage::ICWizardPage(Netlist *netlist, QWidget *parent) : QWizardPage(pare
     setLayout(layout);
 }
 
+// ============= PROTECTED FUNCTIONS ===========================================
+
 /* inititalizePage()
  * -----------------
  * Once the netlist has been loaded, the lineedits

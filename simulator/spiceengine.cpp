@@ -1,23 +1,37 @@
 #include "spiceengine.h"
 
+/* Constructor: SpiceEngine(QObject *)
+ * -----------------------------------
+ * Initializes the ngSpice engine and
+ * connects callback functions. Must only
+ * be called once.
+ */
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
     ngSpice_Init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
     ngSpice_Init_Sync(getvoltage, nullptr, nullptr, nullptr, this);
 }
 
-void SpiceEngine::setErrorFlag(QString message)
-{
-    errorFlag = true;
-    errorMsg = message;
-}
+// =============== PUBLIC FUNCTIONS ============================================
 
+/* Public Function: getErrorStatus(QString&)
+ * -----------------------------------------
+ * Return errorFlag and set argument to errorMsg
+ */
 bool SpiceEngine::getErrorStatus(QString &message)
 {
     if (errorFlag) message = errorMsg;
     return errorFlag;
 }
 
+/* Public Function: startSimulation(QString,
+ *      const QMap<QString, BoundaryCondition *>, bool, QString)
+ * -------------------------------------------------------------
+ * Start running an ngspice background simulation with the script
+ * given by filename and the boundary conditions as in bcs.
+ * Dump indicates whether the output of the simulator should be
+ * written to the dumpFilename.
+ */
 int SpiceEngine::startSimulation(QString filename,
                                   const QMap<QString, BoundaryCondition *> *bcs,
                                   bool dump, QString dumpFilename)
@@ -46,6 +60,12 @@ int SpiceEngine::startSimulation(QString filename,
     return 0;
 }
 
+/* Public Function: startSimulation(Netlist *, bool, QString)
+ * ----------------------------------------------------------
+ * Convenient version of startSimulation when schematic has
+ * been parsed, since the Netlist object knows the filename
+ * and has a pointer to the bcs map.
+ */
 int SpiceEngine::startSimulation(Netlist *netlist, bool dump, QString dumpFilename)
 {
     this->dump = dump;
@@ -73,6 +93,13 @@ int SpiceEngine::startSimulation(Netlist *netlist, bool dump, QString dumpFilena
     return 0;
 }
 
+/* Public Function: resumeSimulation()
+ * -----------------------------------
+ * Resume simulation in background.
+ *
+ * Wrapper around ngSpice_Command(bg_resume)
+ * with error handling
+ */
 int SpiceEngine::resumeSimulation()
 {
     int ret = resume();
@@ -80,6 +107,13 @@ int SpiceEngine::resumeSimulation()
     return ret;
 }
 
+/* Public Function: stopSimulation()
+ * ---------------------------------
+ * Stop background thread.
+ *
+ * Wrapper around ngSpice_Command(bg_halt)
+ * with error handling
+ */
 int SpiceEngine::stopSimulation()
 {
     if (no_bg) return 0;
@@ -88,6 +122,12 @@ int SpiceEngine::stopSimulation()
     return ret;
 }
 
+/* Public Function: saveResults(QList<QString>, bool, QString)
+ * -----------------------------------------------------------
+ * Save final simulation vectors given by vecs in format
+ * given by bin (true = compact binary, false = ascii), in
+ * file named filename.
+ */
 int SpiceEngine::saveResults(QList<QString> vecs, bool bin, QString filename)
 {
     QString command = "write " + filename + " ";
@@ -112,6 +152,16 @@ int SpiceEngine::saveResults(QList<QString> vecs, bool bin, QString filename)
     return 0;
 }
 
+/* Public Function: plotResults(QList<QString>, bool, QString)
+ * -----------------------------------------------------------
+ * Plot the given vectors using gnuplot and save in either
+ * png (png == true) or eps format at the location given by
+ * filename. Ngspice saves <filename>.data (containing the raw
+ * data used for plotting), <filename>.eps/png (containing the plot) and
+ * <filename>.plt (containing the gnuplot commands used to generate the plot).
+ * If the user did not want to save these files then filename will
+ * be in /tmp.
+ */
 int SpiceEngine::plotResults(QList<QString> vecs, bool png, QString filename)
 {
     QString command = "gnuplot " + filename + " ";
@@ -136,7 +186,29 @@ int SpiceEngine::plotResults(QList<QString> vecs, bool png, QString filename)
     return 0;
 
 }
-void SpiceEngine::emitStatusUpdate(char *status)
+
+/* Public Function: vectors()
+ * --------------------------
+ * Return a list of the vectors in the current plot.
+ */
+QList<QString> SpiceEngine::vectors()
+{
+    QList<QString> vectorNames;
+    foreach(pvecinfo v, vectorInfo) {
+        vectorNames.append(v->vecname);
+    }
+    return vectorNames;
+}
+
+// ========= PUBLIC FUNCTIONS FOR USE IN CALLBACKS =============================
+
+/* Public Function (ngspice only): _emitStatusUpdate(char *)
+ * ---------------------------------------------------------
+ * Emit a status update with the status of the simulation
+ * if the update is a numeric % update.
+ * This function is called by the ngspice callback SendStat only.
+ */
+void SpiceEngine::_emitStatusUpdate(char *status)
 {
     QString line = QString(status);
     QStringList tokens = line.split(" ");
@@ -149,7 +221,16 @@ void SpiceEngine::emitStatusUpdate(char *status)
     if (stat != 0.0) emit statusUpdate(static_cast<int>(stat));
 }
 
-void SpiceEngine::writeOutput(char *output)
+/* Public Function (ngspice only): _writeOutput(char *)
+ * ----------------------------------------------------
+ * Called by the ngspice callback SendChar
+ *
+ * If the output is an error message (prefix stderr Error:)
+ * then send a spiceError() signal.
+ *
+ * If dumping to file, write output to file.
+ */
+void SpiceEngine::_writeOutput(char *output)
 {
     if (QString(output).startsWith("stderr Error:", Qt::CaseInsensitive))
         emit spiceError(QString(output));
@@ -162,7 +243,14 @@ void SpiceEngine::writeOutput(char *output)
     }
 }
 
-void SpiceEngine::getVoltage(double *voltage, double t, char *node)
+/* Public Function (ngspice only): _getVoltage(double *, double, char *)
+ * ---------------------------------------------------------------------
+ * Get boundary voltage at given node and time from bcs or netlist and
+ * set value of double at given address to this voltage.
+ *
+ * Called by ngspice callback GetVSRCData
+ */
+void SpiceEngine::_getVoltage(double *voltage, double t, char *node)
 {
     if (netlist == nullptr) {
         *voltage = bcs->value(node)->getState(t);
@@ -171,16 +259,14 @@ void SpiceEngine::getVoltage(double *voltage, double t, char *node)
     }
 }
 
-QList<QString> SpiceEngine::vectors()
-{
-    QList<QString> vectorNames;
-    foreach(pvecinfo v, vectorInfo) {
-        vectorNames.append(v->vecname);
-    }
-    return vectorNames;
-}
-
-void SpiceEngine::setVecInfo(pvecinfoall info)
+/* Public Function (ngspice only): _setVecInfo(pvecinfoall)
+ * --------------------------------------------------------
+ * Set values of instance variables used to display info
+ * about current plot.
+ *
+ * Called by ngspice callback SendInitData
+ */
+void SpiceEngine::_setVecInfo(pvecinfoall info)
 {
     plotName = QString(info->name);
     plotTitle = QString(info->title);
@@ -194,36 +280,69 @@ void SpiceEngine::setVecInfo(pvecinfoall info)
     emit initDataReady();
 }
 
-// ============= NGSPICE CALLBACK FUNCTIONS ======================
+// =============== PRIVATE FUNCTIONS ===========================================
 
+/* Private Function: setErrorFlag(QString)
+ * ---------------------------------------
+ * Set errorFlag to true and errorMsg to
+ * the given message
+ */
+void SpiceEngine::setErrorFlag(QString message)
+{
+    errorFlag = true;
+    errorMsg = message;
+}
+
+// ============= NGSPICE CALLBACK FUNCTIONS ====================================
+// More information about these callback functions can be found in section
+// 19.3.3 of the NGSPICE user manual.
+
+/* Callback Function: initdata (SendInitData)
+ * ------------------------------------------
+ */
 int initdata(pvecinfoall intdata, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
-    engine->setVecInfo(intdata);
+    engine->_setVecInfo(intdata);
     return 0;
 }
 
-/* Callback function called from bg thread in ngspice to transfer
-any string created by printf or puts. Output to stdout in ngspice is
-preceded by token stdout, same with stderr.*/
+/* Callback function: getchar (SendChar)
+ * -------------------------------------
+ * Callback called from bg thread in ngspice to transfer
+ * any string created by printf or puts. Output to stdout in ngspice is
+ * preceded by token stdout, same with stderr.
+ *
+ * Sends output to spiceEngine to handle errors and write
+ * to dump file.
+ */
 int getchar(char* outputreturn, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
-    engine->writeOutput(outputreturn);
+    engine->_writeOutput(outputreturn);
     return 0;
 }
 
-
+/* Callback function: getstat (SendStat)
+ * -------------------------------------
+ * Callback called from bg thread to transfer status updates.
+ * Emits status update through engine.
+ */
 int getstat(char* outputreturn, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
-    engine->emitStatusUpdate(outputreturn);
+    engine->_emitStatusUpdate(outputreturn);
     return 0;
 }
 
+/* Callback function: thread_runs (BGThreadRunning)
+ * ------------------------------------------------
+ * Called from bg thread when thread stops or starts.
+ * Set engine variable no_bg accordingly.
+ */
 int thread_runs(bool noruns, int ident, void* userdata)
 {
     Q_UNUSED(ident);
@@ -235,9 +354,14 @@ int thread_runs(bool noruns, int ident, void* userdata)
     return 0;
 }
 
-
-/* Callback function called from bg thread in ngspice if fcn controlled_exit()
-   is hit. Do not exit, but unload ngspice. */
+/* Callback function: ng_exit (ControlledExit)
+ * -------------------------------------------
+ * Called from bg thread in ngspice if fcn controlled_exit()
+ * is hit. Sets error flag
+ *
+ * TODO: fix this up. still using example code that is possible
+ * for dynamically linked ngspice library
+ */
 int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* userdata)
 {
     Q_UNUSED(ident);
@@ -261,11 +385,18 @@ int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* user
     return exitstatus;
 }
 
+/* Callback function: getvoltage (GetVSRCData)
+ * -------------------------------------------
+ * Called by bg thread when it needs a voltage
+ * value for a voltage source with external input
+ * Calls engine function _getVoltage to return
+ * value.
+ */
 int getvoltage(double* voltage, double t, char* node, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
-    engine->getVoltage(voltage, t, node);
+    engine->_getVoltage(voltage, t, node);
     return 0;
 }
 

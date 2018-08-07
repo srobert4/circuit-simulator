@@ -85,8 +85,3 @@ MainWindow::MainWindow(QWidget *parent)
     connect(simulateButton, &QAction::triggered, schem, &Schematic::simulatePressed);
     connect(saveButton, &QAction::triggered, schem, &Schematic::savePressed);
 }
-
-MainWindow::~MainWindow()
-{
-
-}

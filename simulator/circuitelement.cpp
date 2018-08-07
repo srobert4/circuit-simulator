@@ -60,7 +60,7 @@ CircuitElement::CircuitElement(
 
 CircuitElement::~CircuitElement() { if (dialogBox) delete dialogBox; }
 
-// ========= PUBLIC FUNCTIONS ================================
+// ========= PUBLIC FUNCTIONS ==================================================
 
 /* Public Function: boundingRect()
  * -------------------------------
@@ -95,6 +95,13 @@ void CircuitElement::setNodes(Node *nodeOne, Node *nodeTwo)
     this->nodeTwo = nodeTwo;
 }
 
+
+/* Public Function: getOtherNode(Node *)
+ * -------------------------------------
+ * Returns the address of the node that isn't pointed to
+ * by the argument node, or null pointer if the
+ * argument does not point to a node of this element.
+ */
 Node *CircuitElement::getOtherNode(Node *node)
 {
     if (node == nodeOne) return nodeTwo;
@@ -102,8 +109,12 @@ Node *CircuitElement::getOtherNode(Node *node)
     return nullptr;
 }
 
-// ========= PUBLIC FUNCTIONS ==========================
-
+/* Public Function: rotate(qreal)
+ * ------------------------------
+ * Rotate the element by the given angle,
+ * ensuring that the label remains unrotated
+ * and located in the most convenient location.
+ */
 void CircuitElement::rotate(qreal angle)
 {
     // rotate pixmap
@@ -143,7 +154,7 @@ void CircuitElement::rotate(qreal angle)
     }
 }
 
-// ========= PRIVATE FUNCTIONS =========================
+// =================== PRIVATE FUNCTIONS =======================================
 
 /* Private Function: createDialogBox()
  * -----------------------------------
@@ -335,7 +346,7 @@ void CircuitElement::processDialogInput()
 }
 
 
-// ========= EVENT HANDLERS ============================================
+// ================= EVENT HANDLERS ============================================
 
 /* Mouse Event: mouseDoubleClickEvent(...)
  * ---------------------------------------

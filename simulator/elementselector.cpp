@@ -25,7 +25,7 @@ ElementSelector::ElementSelector(Schematic *schematic, QWidget *parent
     setLayout(layout);
 }
 
-// ============ PUBLIC FUNCTIONS ===========================================
+// ============ PUBLIC FUNCTIONS ===============================================
 
 /* Public Function: addButton(const QString &, const QString &)
  * ------------------------------------------------------------
@@ -76,7 +76,7 @@ void ElementSelector::addButton(const QString &buttonLabel,
     curId++;
 }
 
-// =========== PRIVATE FUNCTIONS ================================
+// =========== PRIVATE FUNCTIONS ===============================================
 
 /* Slot: deselectAll()
  * --------------------
@@ -91,7 +91,7 @@ void ElementSelector::deselectAll()
     buttons->setExclusive(true);
 }
 
-// ============= SLOTS ==========================================
+// ============= SLOTS =========================================================
 
 /* Slot: slotButtonPressed(int)
  * ----------------------------

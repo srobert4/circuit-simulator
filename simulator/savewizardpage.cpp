@@ -66,6 +66,8 @@ SaveWizardPage::SaveWizardPage(bool saveOnly, Netlist *netlist, QWidget *parent)
     setLayout(layout);
 }
 
+// ===================== PRIVATE FUNCTIONS =====================================
+
 /* Private Function: saveNetlist()
  * -------------------------------
  * Saves netlist to file with all settings
@@ -80,7 +82,9 @@ void SaveWizardPage::saveNetlist()
     netlist->writeToFile(getFilename());
 }
 
-/* Override Function: validatePage()
+// ====================== PROTECTED FUNCTIONS ==================================
+
+/* Protected Function: validatePage()
  * ---------------------------------
  * Gets confirmation from the user that
  * they're ready to save and continue to
@@ -99,7 +103,7 @@ bool SaveWizardPage::validatePage() {
     return true;
 }
 
-/* Override Function: isComplete()
+/* Protected Function: isComplete()
  * -------------------------------
  * Only enable next button if a valid filename
  * is given.

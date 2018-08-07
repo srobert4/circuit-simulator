@@ -42,24 +42,10 @@ SimOptionsWizardPage::SimOptionsWizardPage(Netlist *netlist, QWidget *parent) : 
     setLayout(layout);
 }
 
-/* initializePage()
- * ----------------
- * Called once, the first time this page
- * is shown. Initializes DC extension with
- * the elements in the netlist.
- */
-void SimOptionsWizardPage::initializePage()
-{
-    // Set up DC extension now that netlist has been parsed
-    QWidget *dc = createDCExtension(netlist->getElementNames());
-    dc->setHidden(true);
-    layout->addWidget(dc);
-    int dcIndex = modes.indexOf("DC");
-    simulationExtensions[dcIndex] = dc;
-}
+// =================== PRIVATE FUNCTIONS =======================================
 
-/* createTranExtension()
- * ---------------------
+/* Private Function: createTranExtension()
+ * ---------------------------------------
  * Returns QWidget with Transient analysis options
  */
 QWidget *SimOptionsWizardPage::createTranExtension()
@@ -99,8 +85,8 @@ QWidget *SimOptionsWizardPage::createTranExtension()
     return tran;
 }
 
-/* createDCExtension()
- * -------------------
+/* Private Function: createDCExtension()
+ * -------------------------------------
  * Returns QWidget with DC Analysis options
  */
 QWidget *SimOptionsWizardPage::createDCExtension(QSet<QString> elements)
@@ -148,6 +134,24 @@ QWidget *SimOptionsWizardPage::createDCExtension(QSet<QString> elements)
 
     dc->setLayout(layout);
     return dc;
+}
+
+// =============== PROTECTED FUNCTIONS =========================================
+
+/* initializePage()
+ * ----------------
+ * Called once, the first time this page
+ * is shown. Initializes DC extension with
+ * the elements in the netlist.
+ */
+void SimOptionsWizardPage::initializePage()
+{
+    // Set up DC extension now that netlist has been parsed
+    QWidget *dc = createDCExtension(netlist->getElementNames());
+    dc->setHidden(true);
+    layout->addWidget(dc);
+    int dcIndex = modes.indexOf("DC");
+    simulationExtensions[dcIndex] = dc;
 }
 
 /* isComplete()

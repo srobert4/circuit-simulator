@@ -25,15 +25,15 @@ public:
                          const QMap<QString, BoundaryCondition *> *bcs,
                          bool dump, QString dumpFilename);
     int startSimulation(Netlist *netlist, bool dump, QString dumpFilename);
-    void emitStatusUpdate(char *status);
-    void writeOutput(char *output);
-    void getVoltage(double *voltage, double t, char *node);
+    void _emitStatusUpdate(char *status);
+    void _writeOutput(char *output);
+    void _getVoltage(double *voltage, double t, char *node);
     bool running() { return ngSpice_running(); }
     int stopSimulation();
     int resumeSimulation();
     QString curPlot() { return QString(ngSpice_CurPlot()); }
     QList<QString> vectors();
-    void setVecInfo(pvecinfoall info);
+    void _setVecInfo(pvecinfoall info);
     int saveResults(QList<QString> vecs, bool bin, QString filename);
     int plotResults(QList<QString> vecs, bool png, QString filename);
     bool getErrorStatus(QString &message);
@@ -50,7 +50,10 @@ public:
 
 private:
     // convenience wrappers around ngspice functions
-    int command(QString command) { return ngSpice_Command(const_cast<char *>(command.toLatin1().data())); }
+    int command(QString command)
+    {
+        return ngSpice_Command(const_cast<char *>(command.toLatin1().data()));
+    }
     int run() { return ngSpice_Command(const_cast<char *>("bg_run")); }
     int halt() { return ngSpice_Command(const_cast<char *>("bg_halt")); }
     int resume() { return ngSpice_Command(const_cast<char *>("bg_resume")); }

@@ -1,5 +1,16 @@
 #include "boundarycondition.h"
 
+/* Constructor: BoundaryCondition(QString, QObject *)
+ * -------------------------------------------------
+ * Create a new BoundaryCondition object with values
+ * given in the file named by argument filename.
+ *
+ * Emits signal badFile() if file is not properly
+ * formatted.
+ *
+ * Period is determined to be the largest time value
+ * given in the file plus one time step
+ */
 BoundaryCondition::BoundaryCondition(QString filename,
                                      QObject *parent) : QObject(parent)
 {
@@ -17,14 +28,31 @@ BoundaryCondition::BoundaryCondition(QString filename,
             emit badFile();
             return;
         }
-        qreal time = tokens[0].toDouble();
+        bool ok;
+        qreal time = tokens[0].toDouble(&ok);
+        if (!ok) {
+            emit badFile();
+            return;
+        }
         step = time - maxTime;
         maxTime = time > maxTime ? time : maxTime;
-        states[time] = tokens[1].toDouble();
+        states[time] = tokens[1].toDouble(&ok);
+        if (!ok) {
+            emit badFile();
+            return;
+        }
     }
     this->period = maxTime + step;
 }
 
+// ============== STATIC METHODS ===============================================
+
+/* Static method: checkFile(QString)
+ * ---------------------------------
+ * Returns true if file is properly formatted
+ * i.e. every line is of the form <time>\t<value>
+ * where <time> and <value> are numeric.
+ */
  bool BoundaryCondition::checkFile(QString filename)
 {
      QFile file(filename);
@@ -46,6 +74,12 @@ BoundaryCondition::BoundaryCondition(QString filename,
      return ok;
 }
 
+// ================= PUBLIC ====================================================
+
+/* Public Function: getState(double)
+ * ---------------------------------
+ * Returns the voltage at the given time
+ */
 double BoundaryCondition::getState(double time)
 {
     QMap<qreal, qreal>::iterator high, low;
@@ -56,6 +90,14 @@ double BoundaryCondition::getState(double time)
     return interpolate(low, high, time);
 }
 
+// ================= PRIVATE ===================================================
+
+/* Private Function: interpolate(QMap<qreal, qreal>::iterator,
+ * QMap<qreal, qreal>::iterator, double)
+ * -----------------------------------------------------------
+ * Return voltage at given time by linear interpolation of two
+ * nearest values given by input file.
+ */
 double BoundaryCondition::interpolate(
         QMap<qreal, qreal>::iterator low,
         QMap<qreal, qreal>::iterator high,

@@ -96,6 +96,13 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine,
     setLayout(layout);
 }
 
+// ================= PRIVATE FUNCTIONS =========================================
+
+/* Private Function: showErrorMessage()
+ * ------------------------------------
+ * Get error message from engine and show
+ * in a critical messagebox
+ */
 void SimulateWizardPage::showErrorMessage()
 {
     QString message;
@@ -388,7 +395,7 @@ void SimulateWizardPage::initData()
     layout->addWidget(tabs);
 }
 
-// ========== PROTECTED OVERRIDE ===========
+// =============== PROTECTED FUNCTIONS =========================================
 
 /* Protected Function: initializePage()
  * ------------------------------------
@@ -423,7 +430,7 @@ bool SimulateWizardPage::isComplete() const
     return (progressBar->value() == 100);
 }
 
-// ============ SLOTS ==================
+// ====================== SLOTS ================================================
 
 /* Slot: updateStatus(int)
  * -----------------------

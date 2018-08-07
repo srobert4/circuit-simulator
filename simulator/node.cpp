@@ -42,7 +42,7 @@ Node::~Node()
         node->removeNode(this);
 }
 
-// ========= PUBLIC FUNCTIONS ============================
+// ================ PUBLIC FUNCTIONS ===========================================
 
 /* Public Function: boundingRect()
  * -------------------------------
@@ -57,7 +57,9 @@ QRectF Node::boundingRect() const
  * ---------------------------------------
  * Draws node.
  */
-void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void Node::paint(QPainter *painter,
+                 const QStyleOptionGraphicsItem *option,
+                 QWidget *widget)
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
@@ -137,6 +139,11 @@ void Node::addNodes(Node *node)
     if (allNodes.contains(this)) allNodes.remove(this);
 }
 
+/* Public Function: displayID(int)
+ * -------------------------------
+ * Create and display a label showing
+ * the node id number after parsing
+ */
 void Node::displayID(int id)
 {
     if (label) delete label;
@@ -144,12 +151,21 @@ void Node::displayID(int id)
     label->setPos(1, -label->boundingRect().height() - 5);
 }
 
+/* Public Function: hideID()
+ * -------------------------
+ * Delete label if necessary
+ */
 void Node::hideID()
 {
     if (label) delete label;
     label = nullptr;
 }
 
+/* Public Function: getConnectedNodes()
+ * ------------------------------------
+ * Return all nodes that this node is connected
+ * to either directly or indirectly
+ */
 QSet<Node *> Node::getConnectedNodes()
 {
     QSet<Node *> nodes = allNodes;
@@ -216,7 +232,7 @@ void Node::showNode()
     update();
 }
 
-// ============= EVENT HANDLERS =============================
+// ================= EVENT HANDLERS ============================================
 
 /* Event: hoverEnterEvent(...)
  * ---------------------------

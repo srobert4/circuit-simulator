@@ -13,15 +13,9 @@ Schematic::Schematic(QObject *parent)
     simulationOptions = nullptr;
     mode = Schematic::Edit;
     spiceEngine = new SpiceEngine(this);
-    QString errorMsg;
-    if (spiceEngine->getErrorStatus(errorMsg))
-        QMessageBox::critical(nullptr,
-                              "Simulator Error",
-                              "Initialization of simulator failed. "
-                              "Simulations not possible in this session.");
 }
 
-// ============ PUBLIC FUNCTIONS ================================
+// ============ PUBLIC FUNCTIONS ===============================================
 
 /* Public Function: setElementProperties(...)
  * ------------------------------------------------------------
@@ -32,7 +26,8 @@ Schematic::Schematic(QObject *parent)
  * selectedPath - red image shown when element is selected
  * shadowPath - grey image shown when image is being placed
  */
-void Schematic::setElementProperties(CircuitElement::ElementProperties &properties, QString &shadowPath)
+void Schematic::setElementProperties(CircuitElement::ElementProperties &properties,
+                                     QString &shadowPath)
 {
     elementProperties = properties;
     shadowImage = QPixmap(shadowPath);
@@ -45,7 +40,7 @@ void Schematic::setElementProperties(CircuitElement::ElementProperties &properti
 }
 
 
-// ============ PRIVATE FUNCTIONS ================================
+// =================== PRIVATE FUNCTIONS =======================================
 
 /* Private Function: addElement()
  * ------------------------------------
@@ -165,7 +160,8 @@ void Schematic::simulate(bool saveOnly)
 
     // Show options dialog box
     simulationOptions = new SimulationWizard(netlist, spiceEngine, saveOnly);
-    connect(simulationOptions, &SimulationWizard::parseCircuit, this, &Schematic::parseSchematic);
+    connect(simulationOptions, &SimulationWizard::parseCircuit,
+            this, &Schematic::parseSchematic);
     if (!parseErrorFlag) {
         connect(this, &Schematic::parseComplete, [=](bool success){
             if (simulationOptions && !success) simulationOptions->close();
@@ -177,7 +173,8 @@ void Schematic::simulate(bool saveOnly)
     int ret = spiceEngine->stopSimulation(); // in case of bad close
     if (ret != 0) QMessageBox::warning(simulationOptions,
                                        "Simulator Error",
-                                       "There was a problem shutting down the simulation engine.");
+                                       "There was a problem shutting down the "
+                                       "simulation engine.");
     delete simulationOptions;
     simulationOptions = nullptr;
     removeNodeLabels();
@@ -224,13 +221,18 @@ int Schematic::_parse()
  *
  * This function is called by _parse() and should not be used on its own
  */
-int Schematic::_parseFrom(Node *startNode, int startNodeID, int &curNodeID, CircuitElement *lastAdded, QSet<Node *> &seen)
+int Schematic::_parseFrom(Node *startNode,
+                          int startNodeID,
+                          int &curNodeID,
+                          CircuitElement *lastAdded,
+                          QSet<Node *> &seen)
 {
     int ret;
     if (startNode == nullptr) return -1;
 
     if (startNode->hasElement() && curNodeID != -1) {
-        CircuitElement *element = qgraphicsitem_cast<CircuitElement *>(startNode->getElement());
+        CircuitElement *element =
+                qgraphicsitem_cast<CircuitElement *>(startNode->getElement());
 
         if (element->getSubtype() == "ground") {
             if (lastAdded == nullptr) return IncompleteError;
@@ -263,7 +265,6 @@ int Schematic::_parseFrom(Node *startNode, int startNodeID, int &curNodeID, Circ
     if (curNodeID == -1) curNodeID = 0;
     seen.insert(startNode);
     startNodeID = curNodeID;
-    qInfo() << "Node is connected to " << startNode->getConnectedNodes().size() << " nodes";
     Node *node;
     int connections = 0;
     foreach (node, startNode->getConnectedNodes()) {
@@ -323,7 +324,7 @@ void Schematic::deleteSelection()
     }
 }
 
-// ============= SLOTS =========================================
+// ==================== SLOTS ==================================================
 
 /* Slot: parseSchematic()
  * ----------------------
@@ -365,7 +366,7 @@ void Schematic::parseSchematic()
     emit parseComplete(!parseErrorFlag);
 }
 
-// ============= EVENT HANDLERS ================================
+// ================== EVENT HANDLERS ===========================================
 
 /* MouseEvent: mouseReleaseEvent(QMouseEvent *)
  * -------------------------------------------

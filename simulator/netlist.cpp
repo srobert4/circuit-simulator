@@ -1,54 +1,21 @@
-
 #include "netlist.h"
 
+/* Constructor */
 Netlist::Netlist(const QString &name, QObject *parent) : QObject(parent)
 {
     this->setName(name);
-    fileReady = false;
 }
 
-void Netlist::setName(const QString &name) { this->name = name; }
-void Netlist::setFilename(const QString &filename) {
-    this->filename = filename;
-    fileReady = true;
-}
+// ================== PUBLIC FUNCTIONS =========================================
 
-int Netlist::addElement(
-        const QString &element,
-        const QString &name,
-        const QString &nodeIn,
-        const QString &nodeOut,
-        const QString &value,
-        const QString &units,
-        const QString &externalFilename
-        )
-{
-    if (name == "") return NoNameError;
-    if (value == "") return NoValueError;
-    if (elementNames.contains(element + name)) return DuplicateNameError;
-
-    QString line = element + name + " ";
-    if (element == "V" && nodeIn == "0") {
-        line += nodeOut + " " + nodeIn + " " + value + units;
-    } else {
-        line += element + name + " "  + nodeIn + " " + nodeOut + " " + value + units;
-    }
-
-    // add boundary conditions if necessary
-    if (externalFilename != "") {
-        BoundaryCondition *bc = new BoundaryCondition(externalFilename, this);
-        boundaryConditions[(element + name).toLower()] = bc;
-    }
-    elementNames.insert(element + name);
-    nodeNames.insert(nodeIn);
-    nodeNames.insert(nodeOut);
-    elements.append(line);
-    return 0;
-}
-
+/* Public Function: addElement(CircuitElement *, int, int)
+ * -------------------------------------------------------
+ * Add element using given CircuitElement object and nodes
+ */
 int Netlist::addElement(CircuitElement *element, int nodeIn, int nodeOut)
 {
-    if (element->getValue() == "" and element->getExternalFile() == "") return NoValueError;
+    if (element->getValue() == "" && element->getExternalFile() == "")
+        return NoValueError;
     if (element->getName().length() == 1) return NoNameError;
     if (elementNames.contains(element->getName())) return DuplicateNameError;
 
@@ -56,10 +23,12 @@ int Netlist::addElement(CircuitElement *element, int nodeIn, int nodeOut)
         nodeIn = nodeOut;
         nodeOut = 0;
     }
-    QString line = element->getName() + " " + QString::number(nodeIn) + " " + QString::number(nodeOut);
+    QString line = element->getName() + " " + QString::number(nodeIn) + " " +
+            QString::number(nodeOut);
     if (element->getExternalFile() != "") {
         line += " external";
-        BoundaryCondition *bc = new BoundaryCondition(element->getExternalFile(), this);
+        BoundaryCondition *bc = new BoundaryCondition(element->getExternalFile(),
+                                                      this);
         boundaryConditions[element->getName().toLower()] = bc;
     } else {
         line += (" " + element->getValue());
@@ -72,6 +41,11 @@ int Netlist::addElement(CircuitElement *element, int nodeIn, int nodeOut)
     return 0;
 }
 
+/* Public Function: groundElement(CircuitElement *)
+ * ------------------------------------------------
+ * Connect the given element to ground (change second
+ * node to 0)
+ */
 int Netlist::groundElement(CircuitElement *element)
 {
     if (!elementNames.contains(element->getName())) return -1;
@@ -86,35 +60,11 @@ int Netlist::groundElement(CircuitElement *element)
     return 0;
 }
 
-void Netlist::addInitialCondition(QString node, const QString &condition)
-{
-    bool ok;
-    node.toInt(&ok);
-    node = (ok ? "v(" + node + ")" : node);
-
-    initialConditions.append(".ic " + node + "=" + condition);
-}
-
-void Netlist::setGraphing(QString &graphName, QList<QString> &nodes)
-{
-    graphingCommand = "gnuplot " + graphName;
-    for (QString node : nodes)
-        graphingCommand += (" " + node);
-}
-
-// TODO: Make this flexible for different analysis lines (.tran .dc)
-void Netlist::setAnalysis(
-    const QString &type,
-    const QString &step,
-    const QString &stepUnits,
-    const QString &time,
-    const QString &timeUnits
-)
-{
-    analysis = type + " " + step + stepUnits + " " + time + timeUnits;
-}
-
-
+/* Public Function: writeToFile(const QString &)
+ * ---------------------------------------------
+ * Write netlist to file as a script that can be
+ * run by ngspice.
+ */
 void Netlist::writeToFile(const QString &filename)
 {
     QFile file(filename);
@@ -125,7 +75,6 @@ void Netlist::writeToFile(const QString &filename)
         out << name << endl;
         // elements
         for (QString elem : elements) {
-            qInfo() << elem;
             out << elem << endl;
         }
         // ics
@@ -138,5 +87,4 @@ void Netlist::writeToFile(const QString &filename)
         file.close();
     }
     this->filename = filename;
-    fileReady = true;
 }

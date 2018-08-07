@@ -81,6 +81,17 @@ IntroWizardPage::IntroWizardPage(QMap<QString, BoundaryCondition *> *bcMap,
     setLayout(layout);
 }
 
+// ============= PRIVATE FUNCTIONS =============================================
+
+/* Private Function: showExternalInputSelector()
+ * ---------------------------------------------
+ * Create and show a widget to offer line edits to
+ * provide files for any external elements in the
+ * circuit.
+ *
+ * Called when the user enters a valid circuit
+ * file to load
+ */
 void IntroWizardPage::showExternalInputSelector()
 {
     // if no filename - return
@@ -131,6 +142,14 @@ void IntroWizardPage::showExternalInputSelector()
     layout->addWidget(inputSelector);
 }
 
+/* Private Function: hideExternalInputSelector()
+ * ---------------------------------------------
+ * Remove the current input selector widget and
+ * delete it.
+ *
+ * Called when the user selects to parse the schematic
+ * or changes the file to load
+ */
 void IntroWizardPage::hideExternalInputSelector()
 {
     if (!inputSelector) return;
@@ -140,6 +159,14 @@ void IntroWizardPage::hideExternalInputSelector()
     inputSelector = nullptr;
 }
 
+/* Private Function: populateBoundaryConditions()
+ * ----------------------------------------------
+ * Populate the bcMap with BoundaryCondition objects
+ * corresponding to the given filenames to be used in
+ * the simulation.
+ *
+ * Called when user agrees to go to the simulation page.
+ */
 void IntroWizardPage::populateBoundaryConditions()
 {
     foreach(QString node, selectedFiles.keys()){
