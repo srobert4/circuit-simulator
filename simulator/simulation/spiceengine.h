@@ -22,6 +22,7 @@ class SpiceEngine : public QObject
     Q_OBJECT
 public:
     explicit SpiceEngine(QObject *parent = nullptr);
+    ~SpiceEngine();
     int startSimulation(QString filename,
                          const QMap<QString, BoundaryCondition *> *bcs,
                          bool dump, QString dumpFilename);
@@ -29,10 +30,10 @@ public:
     void _emitStatusUpdate(char *status);
     void _writeOutput(char *output);
     void _getBoundaryCondition(double *value, double t, char *node);
-    bool running() { return ngSpice_running(); }
+    bool running() { return ngspice_running(); }
     int stopSimulation();
     int resumeSimulation();
-    QString curPlot() { return QString(ngSpice_CurPlot()); }
+    QString curPlot() { return QString(ngspice_curPlot()); }
     QList<QString> vectors();
     void _setVecInfo(pvecinfoall info);
     int saveResults(QList<QString> vecs, bool bin, QString filename);
@@ -50,14 +51,28 @@ public:
     pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 private:
+    // ngspice
+    QLibrary *lngspice;
+    typedef int (*InitFunction)(SendChar*, SendStat*, ControlledExit*, SendData*, SendInitData*,
+                        BGThreadRunning*, void*);
+    typedef int (*InitSyncFunction)(GetVSRCData* , GetISRCData* , GetSyncData* , int*,
+                                    void*);
+    typedef int (*CommandFunction)(char*);
+    typedef bool (*RunningFunction)(void);
+    typedef char *(*CurPlotFunction)(void);
+
+    CommandFunction ngspice_command;
+    RunningFunction ngspice_running;
+    CurPlotFunction ngspice_curPlot;
+
     // convenience wrappers around ngspice functions
     int command(QString command)
     {
-        return ngSpice_Command(const_cast<char *>(command.toLatin1().data()));
+        return ngspice_command(const_cast<char *>(command.toLatin1().data()));
     }
-    int run() { return ngSpice_Command(const_cast<char *>("bg_run")); }
-    int halt() { return ngSpice_Command(const_cast<char *>("bg_halt")); }
-    int resume() { return ngSpice_Command(const_cast<char *>("bg_resume")); }
+    int run() { return ngspice_command(const_cast<char *>("bg_run")); }
+    int halt() { return ngspice_command(const_cast<char *>("bg_halt")); }
+    int resume() { return ngspice_command(const_cast<char *>("bg_resume")); }
 
     const QMap<QString, BoundaryCondition *> *bcs;
     QString filename;

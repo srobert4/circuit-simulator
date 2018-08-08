@@ -18,7 +18,6 @@ public:
     enum { Page_Intro, Page_SaveIntro, Page_SimOptions, Page_InitialConds, Page_SaveAs, Page_RunSim };
 
     explicit SimulationWizard(Netlist *netlist,
-                              SpiceEngine *engine,
                               bool saveOnly,
                               QWidget *parent = nullptr);
 

@@ -59,8 +59,3 @@ HEADERS += \
 
 RESOURCES += \
     images.qrc
-
-unix:!macx: LIBS += -L$$PWD/../../../../usr/local/lib/ -lngspice
-
-INCLUDEPATH += $$PWD/../../../../usr/local/include/ngspice
-DEPENDPATH += $$PWD/../../../../usr/local/include/ngspice

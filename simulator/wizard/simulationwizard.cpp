@@ -1,7 +1,6 @@
 #include "simulationwizard.h"
 
 SimulationWizard::SimulationWizard(Netlist *netlist,
-                                   SpiceEngine *engine,
                                    bool saveOnly,
                                    QWidget *parent) : QWizard(parent)
 {
@@ -24,7 +23,7 @@ SimulationWizard::SimulationWizard(Netlist *netlist,
 
     setPage(Page_SaveAs, new SaveWizardPage(saveOnly, netlist));
 
-    setPage(Page_RunSim, new SimulateWizardPage(engine, netlist, &bcMap));
+    setPage(Page_RunSim, new SimulateWizardPage(netlist, &bcMap));
 
     setWindowTitle("Simulation Wizard");
     // QWizard::IndependentPages:

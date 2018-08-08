@@ -8,8 +8,20 @@
  */
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
-    ngSpice_Init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
-    ngSpice_Init_Sync(getvoltage, getcurrent, nullptr, nullptr, this);
+    lngspice = new QLibrary("ngspice", this);
+
+    InitFunction init = (InitFunction)lngspice->resolve("ngSpice_Init");
+    init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
+    InitSyncFunction initSync = (InitSyncFunction)lngspice->resolve("ngSpice_Init_Sync");
+    initSync(getvoltage, getcurrent, nullptr, nullptr, this);
+    ngspice_command = (CommandFunction)lngspice->resolve("ngSpice_Command");
+    ngspice_running = (RunningFunction)lngspice->resolve("ngSpice_running");
+    ngspice_curPlot = (CurPlotFunction)lngspice->resolve("ngSpice_CurPlot");
+}
+
+SpiceEngine::~SpiceEngine()
+{
+    lngspice->unload();
 }
 
 // =============== PUBLIC FUNCTIONS ============================================
@@ -167,20 +179,24 @@ int SpiceEngine::plotResults(QList<QString> vecs, bool png, QString filename)
     QString command = "gnuplot " + filename + " ";
     foreach(QString vec, vecs) command += vec + " ";
     int ret;
-    if (png) ret = this->command("set gnuplot_terminal=png");
-    if (ret != 0) {
-        setErrorFlag("NGSPICE: Error changing ngspice settings");
-        return ret;
+    if (png) {
+        ret = this->command("set gnuplot_terminal=png");
+        if (ret != 0) {
+            setErrorFlag("NGSPICE: Error changing ngspice settings");
+            return ret;
+        }
     }
     ret = this->command(command);
     if (ret != 0) {
         setErrorFlag("NGSPICE: Error plotting vectors");
         return ret;
     }
-    if (png) ret = this->command("set gnuplot_terminal=eps");
-    if (ret != 0) {
-        setErrorFlag("NGSPICE: Error changing ngspice settings");
-        return ret;
+    if (png) {
+        ret = this->command("set gnuplot_terminal=eps");
+        if (ret != 0) {
+            setErrorFlag("NGSPICE: Error changing ngspice settings");
+            return ret;
+        }
     }
 
     return 0;
@@ -379,7 +395,6 @@ int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* user
         printf("DNote: Unloading ngspice is not possible\n");
         printf("DNote: Can we recover? Send 'quit' command to ngspice.\n");
         engine->errorflag = true;
-        ngSpice_Command(const_cast<char *>("quit 5"));
     }
 
     return exitstatus;

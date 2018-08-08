@@ -12,7 +12,6 @@ Schematic::Schematic(QObject *parent)
     curShadow = nullptr;
     simulationOptions = nullptr;
     mode = Schematic::Edit;
-    spiceEngine = new SpiceEngine(this);
 }
 
 // ============ PUBLIC FUNCTIONS ===============================================
@@ -160,7 +159,7 @@ void Schematic::simulate(bool saveOnly)
     }
 
     // Show options dialog box
-    simulationOptions = new SimulationWizard(netlist, spiceEngine, saveOnly);
+    simulationOptions = new SimulationWizard(netlist, saveOnly);
     connect(simulationOptions, &SimulationWizard::parseCircuit,
             this, &Schematic::parseSchematic);
     if (!parseErrorFlag) {
@@ -170,12 +169,6 @@ void Schematic::simulate(bool saveOnly)
         simulationOptions->exec();
     }
 
-    // Clean up
-    int ret = spiceEngine->stopSimulation(); // in case of bad close
-    if (ret != 0) QMessageBox::warning(simulationOptions,
-                                       "Simulator Error",
-                                       "There was a problem shutting down the "
-                                       "simulation engine.");
     delete simulationOptions;
     simulationOptions = nullptr;
     removeNodeLabels();

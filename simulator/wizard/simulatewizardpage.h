@@ -9,8 +9,7 @@ class SimulateWizardPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit SimulateWizardPage(SpiceEngine *engine = nullptr,
-                                Netlist *netlist = nullptr,
+    explicit SimulateWizardPage(Netlist *netlist = nullptr,
                                 QMap<QString, BoundaryCondition *> *bcMap = nullptr,
                                 QWidget *parent = nullptr);
 

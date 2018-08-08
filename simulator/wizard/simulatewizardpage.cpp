@@ -1,13 +1,12 @@
 #include "simulatewizardpage.h"
 
-SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine,
-                                       Netlist *netlist,
+SimulateWizardPage::SimulateWizardPage(Netlist *netlist,
                                        QMap<QString, BoundaryCondition *> *bcMap,
                                        QWidget *parent) : QWizardPage(parent)
 {
     setTitle("Run your simulation");
     this->netlist = netlist;
-    this->engine = engine;
+    this->engine = new SpiceEngine(this);
     this->bcMap = bcMap;
 
     // Initial start simulation widget
@@ -77,15 +76,15 @@ SimulateWizardPage::SimulateWizardPage(SpiceEngine *engine,
     });
 
     // SIGNALS FROM ENGINE
-    connect(engine, &SpiceEngine::statusUpdate,
+    connect(this->engine, &SpiceEngine::statusUpdate,
             this, &SimulateWizardPage::updateStatus,
             Qt::QueuedConnection);
 
-    connect(engine, &SpiceEngine::spiceError,
+    connect(this->engine, &SpiceEngine::spiceError,
             this, &SimulateWizardPage::receiveError,
             Qt::QueuedConnection);
 
-    connect(engine, &SpiceEngine::initDataReady,
+    connect(this->engine, &SpiceEngine::initDataReady,
             this, &SimulateWizardPage::initData,
             Qt::QueuedConnection);
 
