@@ -15,6 +15,8 @@ CircuitElement::CircuitElement(
     setAcceptHoverEvents(true);
 
     // Create symbol
+    subtype = properties.subtype;
+
     normal = properties.image;
     this->_width = normal.width();
     this->_height = normal.height();
@@ -49,7 +51,6 @@ CircuitElement::CircuitElement(
     value = "";
     unitMod = "";
     units = properties.units;
-    subtype = properties.subtype;
 
     label = new QGraphicsSimpleTextItem(prefix + name + "\n" + value + units, this);
 

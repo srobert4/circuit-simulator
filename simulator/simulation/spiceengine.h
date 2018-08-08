@@ -30,6 +30,7 @@ public:
     void _emitStatusUpdate(char *status);
     void _writeOutput(char *output);
     void _getBoundaryCondition(double *value, double t, char *node);
+    void _quit();
     bool running() { return ngspice_running(); }
     int stopSimulation();
     int resumeSimulation();

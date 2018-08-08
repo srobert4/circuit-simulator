@@ -2,9 +2,8 @@
 
 /* Constructor: SpiceEngine(QObject *)
  * -----------------------------------
- * Initializes the ngSpice engine and
- * connects callback functions. Must only
- * be called once.
+ * Loads ngspice library and resolves necessary ngSpice functions.
+ * Calls init functions to send the callback functions to ngspice
  */
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
@@ -296,6 +295,12 @@ void SpiceEngine::_setVecInfo(pvecinfoall info)
     emit initDataReady();
 }
 
+void SpiceEngine::_quit()
+{
+    command("exit");
+    lngspice->unload();
+}
+
 // =============== PRIVATE FUNCTIONS ===========================================
 
 /* Private Function: setErrorFlag(QString)
@@ -381,22 +386,10 @@ int thread_runs(bool noruns, int ident, void* userdata)
 int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* userdata)
 {
     Q_UNUSED(ident);
+    Q_UNUSED(immediate);
+    Q_UNUSED(quitexit);
     SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
-    if(quitexit) {
-        printf("DNote: Returned form quit with exit status %d\n", exitstatus);
-        exit(exitstatus);
-    }
-    if(immediate) {
-        printf("DNote: Unloading ngspice inmmediately is not possible\n");
-        printf("DNote: Can we recover?\n");
-    }
-
-    else {
-        printf("DNote: Unloading ngspice is not possible\n");
-        printf("DNote: Can we recover? Send 'quit' command to ngspice.\n");
-        engine->errorflag = true;
-    }
-
+    engine->_quit();
     return exitstatus;
 }
 
