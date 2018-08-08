@@ -7,7 +7,7 @@
 CircuitElement::CircuitElement(
         const ElementProperties properties,
         QGraphicsItem *parent
-) : SchematicItem("element", parent, properties.subtype)
+) : QGraphicsItem(parent)
 {
     setFlag(ItemIsSelectable, true);
     setFlag(ItemIsFocusable, true);
@@ -49,10 +49,9 @@ CircuitElement::CircuitElement(
     value = "";
     unitMod = "";
     units = properties.units;
+    subtype = properties.subtype;
 
-    // Label doesn't inherit SchematicItem so set data ourselves
     label = new QGraphicsSimpleTextItem(prefix + name + "\n" + value + units, this);
-    label->setData(TypeKey, "label");
 
     // Set children positions using child->setPos(pos relative to symbol)
     label->setPos(-label->boundingRect().width() / 2, _height / 2);
@@ -196,6 +195,7 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
         // --- TOGGLE EXTENSIONS BUTTONS ---
         QRadioButton *constButton = new QRadioButton("Constant value", dialog);
         QRadioButton *externalButton = new QRadioButton("External value", dialog);
+        external = false;
         QButtonGroup *valueTypeButtons = new QButtonGroup(dialog);
         valueTypeButtons->addButton(constButton);
         valueTypeButtons->addButton(externalButton);
@@ -247,17 +247,18 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
         });
         connect(externalButton, &QRadioButton::toggled, [=](){
             external = true;
-           constValueExt->setHidden(true);
-           extValueExt->setVisible(true);
-           doneButton->setEnabled(valueFileLineEdit->text() != "" &&
+            constValueExt->setHidden(true);
+            extValueExt->setVisible(true);
+            doneButton->setEnabled(valueFileLineEdit->text() != "" &&
                        QFile::exists(valueFileLineEdit->text()));
         });
         connect(valueFileLineEdit, &QLineEdit::textChanged, [=](){
             doneButton->setEnabled(valueFileLineEdit->text() != "" &&
-                        QFile::exists(valueFileLineEdit->text()));
+                    QFile::exists(valueFileLineEdit->text()));
         });
         connect(doneButton, &QPushButton::pressed, [=](){
-            if (BoundaryCondition::checkFile(valueFileLineEdit->text())) {
+            if (!external ||
+                    BoundaryCondition::checkFile(valueFileLineEdit->text())) {
                 dialog->accept();
                 return;
             }
@@ -265,7 +266,7 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
             QMessageBox::warning(nullptr,
                                  "Bad Input File",
                                  "The input file provided is not correctly"
-                                 " formatted. Format should be: <time>\\t"
+                                 " formatted. Format should be: <time> "
                                  "<value>. Please provide a valid file.");
         });
     } else {
@@ -283,7 +284,7 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
 
     dialog->setLayout(layout);
 
-   connect(cancelButton, SIGNAL(clicked(bool)),
+    connect(cancelButton, SIGNAL(clicked(bool)),
             dialog, SLOT(reject()));
     connect(doneButton, SIGNAL(clicked(bool)),
             dialog, SLOT(accept()));
@@ -344,7 +345,6 @@ void CircuitElement::processDialogInput()
         label->setPos(label->boundingRect().width() / 2, _height / 2);
     }
 }
-
 
 // ================= EVENT HANDLERS ============================================
 

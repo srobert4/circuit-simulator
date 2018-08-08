@@ -1,7 +1,7 @@
 #ifndef INTROWIZARDPAGE_H
 #define INTROWIZARDPAGE_H
 
-#include "boundarycondition.h"
+#include "../simulation/boundarycondition.h"
 #include <QtWidgets>
 
 class IntroWizardPage : public QWizardPage
@@ -26,6 +26,7 @@ private:
 
     QMessageBox *conf;
     bool parseComplete = false;
+    QRadioButton *completeCircuit = nullptr;
 
     void showExternalInputSelector();
     void hideExternalInputSelector();

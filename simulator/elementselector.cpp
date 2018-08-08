@@ -48,10 +48,12 @@ void ElementSelector::addButton(const QString &buttonLabel,
     // associate with path and element
     CircuitElement::ElementProperties elementProperties;
     elementProperties.image = QPixmap(imgPath);
-    elementProperties.image = elementProperties.image.scaledToWidth(elementWidth * widthRatio);
+    elementProperties.image = elementProperties.image.scaledToWidth(
+                static_cast<int>(elementWidth * widthRatio));
 
     elementProperties.selected = QPixmap(imgSelectedPath);
-    elementProperties.selected = elementProperties.selected.scaledToWidth(elementWidth * widthRatio);
+    elementProperties.selected = elementProperties.selected.scaledToWidth(
+                static_cast<int>(elementWidth * widthRatio));
 
     elementProperties.hasLabel = hasLabel;
     elementProperties.allowsExternalInput = allowsExternalInput;

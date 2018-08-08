@@ -83,8 +83,87 @@ void Netlist::writeToFile(const QString &filename)
         // analysis
         out << analysis << endl;
         // end
+
+        if (!analysis.isEmpty())
+            out << ".end" << endl;
+        file.close();
+    }
+    this->filename = filename;
+}
+
+/* Public Function: appendTo(const QString &)
+ * ------------------------------------------
+ * Append simulation settings to an existing
+ * file. Assumes the file contains only name
+ * and circuit elements.
+ */
+void Netlist::appendTo(const QString &filename)
+{
+    QFile file(filename);
+    if (file.open(QFile::WriteOnly | QIODevice::Text | QFile::Append)) {
+        QTextStream out(&file);
+        out << endl;
+        // ics
+        for (QString ic : initialConditions)
+            out << ic << endl;
+        // analysis
+        out << analysis << endl;
+        // end
         out << ".end" << endl;
         file.close();
     }
     this->filename = filename;
+}
+
+/* Public Function: copyAndAppend(const QString&, const QString&)
+ * --------------------------------------------------------------
+ * Copy text from the file called existingFilename to a new file
+ * called newFilename, then append simulation settings to the
+ * new file. Assumes the exisiting file contains only name and
+ * circuit elements.
+ */
+void Netlist::copyAndAppend(const QString &newFilename,
+                            const QString &existingFilename)
+{
+    QFile newFile(newFilename);
+    QFile existingFile(existingFilename);
+    if (!newFile.open(QFile::WriteOnly | QIODevice::Text)) return;
+    if (!existingFile.open(QFile::ReadOnly | QIODevice::Text)) return;
+    QTextStream out(&newFile);
+    QTextStream in(&existingFile);
+
+    while(!in.atEnd()) {
+        out << in.readLine() << endl;
+    }
+    // ics
+    for (QString ic : initialConditions)
+        out << ic << endl;
+    // analysis
+    out << analysis << endl;
+    // end
+    out << ".end" << endl;
+    newFile.close();
+    existingFile.close();
+    this->filename = newFilename;
+}
+
+// =============== STATIC PUBLIC METHODS =======================================
+
+QSet<QString> Netlist::parseNodesFromFile(const QString &filename)
+{
+    QSet<QString> nodes;
+    QFile file(filename);
+    if (file.open(QFile::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        if (!in.atEnd()) in.readLine(); // title line
+        while(!in.atEnd()) {
+            QString line = in.readLine();
+            if (line.startsWith(".") || line.startsWith("*")) continue;
+            QStringList tokens = line.split(QRegExp("\\s+"));
+            if (tokens.length() < 3) continue;
+            nodes.insert(tokens[1]);
+            nodes.insert(tokens[2]);
+        }
+    }
+    return nodes;
 }

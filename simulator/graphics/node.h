@@ -2,9 +2,8 @@
 #define NODE_H
 
 #include <QtWidgets>
-#include "schematicitem.h"
 
-class Node : public SchematicItem
+class Node : public QObject, public QGraphicsItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
@@ -23,7 +22,7 @@ public:
     enum {Type = UserType + 3};
     int type() const override {return Type;}
     explicit Node(
-            SchematicItem *element = nullptr,
+            QGraphicsItem *element = nullptr,
             QGraphicsItem *parent = nullptr
             );
     ~Node() override;
@@ -52,8 +51,8 @@ public:
     QSet<Node *> getAllNodesSet() { return allNodes; }
     int numConnections() { return xNodes.size() + yNodes.size(); }
     bool hasElement() { return (element != nullptr); }
-    SchematicItem *getElement() { return element; }
-    SchematicItem *element;
+    QGraphicsItem *getElement() { return element; }
+    QGraphicsItem *element;
     QSet<Node *> allNodes; // all nodes this node is connected to, not only those this node draws a wire to
 
 protected:

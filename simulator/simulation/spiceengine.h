@@ -15,6 +15,7 @@ int thread_runs(bool noruns, int ident, void *userdata);
 int initdata(pvecinfoall intdata, int ident, void *userdata);
 int data(pvecvaluesall vdata, int numvecs, int ident, void *userdata);
 int getvoltage(double *voltage, double t, char *node, int ident, void *userdata);
+int getcurrent(double *current, double t, char *node, int ident, void *userdata);
 
 class SpiceEngine : public QObject
 {
@@ -27,7 +28,7 @@ public:
     int startSimulation(Netlist *netlist, bool dump, QString dumpFilename);
     void _emitStatusUpdate(char *status);
     void _writeOutput(char *output);
-    void _getVoltage(double *voltage, double t, char *node);
+    void _getBoundaryCondition(double *value, double t, char *node);
     bool running() { return ngSpice_running(); }
     int stopSimulation();
     int resumeSimulation();

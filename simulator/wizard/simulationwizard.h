@@ -2,7 +2,8 @@
 #define SIMULATIONOPTIONSDIALOG_H
 
 #include <QtWidgets>
-#include "netlist.h"
+#include "../simulation/netlist.h"
+#include "../simulation/spiceengine.h"
 #include "savewizardpage.h"
 #include "introwizardpage.h"
 #include "simulatewizardpage.h"

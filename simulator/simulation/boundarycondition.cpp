@@ -23,7 +23,7 @@ BoundaryCondition::BoundaryCondition(QString filename,
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
-        QStringList tokens = line.split("\t");
+        QStringList tokens = line.split(QRegExp("\\s+"));
         if (tokens.length() != 2) {
             emit badFile();
             return;
@@ -60,7 +60,7 @@ BoundaryCondition::BoundaryCondition(QString filename,
      QTextStream in(&file);
      bool ok = true;
      while(!in.atEnd()){
-         QStringList tokens = in.readLine().split("\t");
+         QStringList tokens = in.readLine().split(QRegExp("\\s+"));
          if (tokens.length() != 2) {
              ok = false;
              break;

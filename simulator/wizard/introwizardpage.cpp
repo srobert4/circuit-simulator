@@ -79,6 +79,11 @@ IntroWizardPage::IntroWizardPage(QMap<QString, BoundaryCondition *> *bcMap,
     layout->addWidget(fileLoader);
 
     setLayout(layout);
+
+    // For checking files
+    completeCircuit = new QRadioButton(this);
+    completeCircuit->setHidden(true);
+    registerField("completeCircuitFile", completeCircuit);
 }
 
 // ============= PRIVATE FUNCTIONS =============================================
@@ -174,7 +179,7 @@ void IntroWizardPage::populateBoundaryConditions()
     }
 }
 
-// =========== PROTECTED FUNCTIONS ======================
+// =============== PROTECTED FUNCTIONS =========================================
 
 /* isComplete()
  * ------------
@@ -201,6 +206,7 @@ bool IntroWizardPage::isComplete() const {
  * Else - confirm that the user wants to go to sim page with no return option
  */
 bool IntroWizardPage::validatePage() {
+    // Parse circuit
     if (parseButton->isChecked()) {
         if (parseComplete) return true;
         emit parseCircuit();
@@ -209,6 +215,7 @@ bool IntroWizardPage::validatePage() {
         return true;
     }
 
+    // Validate external input files given
     foreach(QLineEdit *line, selectedFiles) {
         if (line->text().isEmpty()) return false;
         if (!BoundaryCondition::checkFile(line->text())){
@@ -221,13 +228,39 @@ bool IntroWizardPage::validatePage() {
         }
     }
 
-    if (QMessageBox::question(this,
-                                 "Start simulation?",
-                                 "Continue?\nYou will not be able to "
-                                 "return to this page",
-                                 (QMessageBox::Cancel | QMessageBox::Yes))
-            == QMessageBox::Cancel) return false;
+    // Validate circuit file given
+    if (fileLineEdit->text().isEmpty()) return false;
 
+    completeCircuit->setChecked(false);
+    QFile file(fileLineEdit->text());
+    if (file.open(QFile::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        while(!in.atEnd()) {
+            QString line = in.readLine();
+            if (line.startsWith(".")){
+                completeCircuit->setChecked(true);
+                break;
+            }
+        }
+    }
+    if (completeCircuit->isChecked()) {
+        if (QMessageBox::question(this,
+                                  "Start simulation?",
+                                  "Complete circuit detected. "
+                                  "Continue to simulation?"
+                                  "\nYou will not be able to "
+                                  "return to this page",
+                                  (QMessageBox::Cancel | QMessageBox::Yes))
+                == QMessageBox::Cancel) return false;
+    } else {
+       if (QMessageBox::question(this,
+                             "Incomplete Circuit",
+                             "The file you provided does not contain "
+                             "simulation commands. Continue to set simulation "
+                             "mode?",
+                             (QMessageBox::Cancel | QMessageBox::Yes))
+               == QMessageBox::Cancel) return false;
+    }
     populateBoundaryConditions();
     return true;
 }

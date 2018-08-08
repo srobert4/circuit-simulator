@@ -56,7 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
                         ":/images/currentSource.png",
                         ":/images/currentSourceSelected.png",
                         ":/images/currentSourceShadow.png",
-                        true, true, "Q", "A", 1);
+                        true, true, "I", "A", 1);
 
     // Set up schematic graphics view
     view = new QGraphicsView(schem, this);

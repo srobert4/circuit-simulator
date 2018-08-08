@@ -6,11 +6,11 @@
 #include <chrono>         // std::chrono::seconds
 #include <QtWidgets>
 
-#include "circuitelement.h"
-#include "node.h"
-#include "netlist.h"
-#include "simulationwizard.h"
-#include "spiceengine.h"
+#include "graphics/circuitelement.h"
+#include "graphics/node.h"
+#include "simulation/netlist.h"
+#include "wizard/simulationwizard.h"
+#include "simulation/spiceengine.h"
 
 class Schematic : public QGraphicsScene
 {

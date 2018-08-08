@@ -2,7 +2,7 @@
 #define NETLIST_H
 
 #include <QtWidgets>
-#include "circuitelement.h"
+#include "../graphics/circuitelement.h"
 #include "boundarycondition.h"
 
 class Netlist : public QObject
@@ -23,9 +23,13 @@ public:
     void setInitialConditions(QString line) { initialConditions.append(line); }
 
     void writeToFile(const QString &filename);
+    void appendTo(const QString &filename);
+    void copyAndAppend(const QString &newFilename,
+                       const QString &existingFilename);
     QSet<QString> getElementNames() { return elementNames; }
     QSet<QString> getNodeNames() { return nodeNames; }
-    double getBoundaryPressure(char *node, double time)
+    static QSet<QString> parseNodesFromFile(const QString &filename);
+    double getBoundaryValue(char *node, double time)
     {
         return boundaryConditions[node]->getState(time);
     }

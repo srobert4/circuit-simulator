@@ -8,11 +8,8 @@ SaveWizardPage::SaveWizardPage(bool saveOnly, Netlist *netlist, QWidget *parent)
     // Page set-up
     setCommitPage(true);
     setTitle("Save Your Circuit");
-    QLabel *label = new QLabel("Save your circuit to a file so that you can run"
-                               " this simulation again without drawing a new schematic. "
-                               "Once you save your circuit, you cannot edit the circuit or"
-                               " simulation settings further in this wizard.", this);
-    label->setWordWrap(true);    
+    intro = new QLabel( this);
+    intro->setWordWrap(true);
     setButtonText(QWizard::CommitButton, "&Run >");
     if (saveOnly) {
         setButtonText(QWizard::FinishButton, "Save & Exit");
@@ -53,7 +50,7 @@ SaveWizardPage::SaveWizardPage(bool saveOnly, Netlist *netlist, QWidget *parent)
     filename->setLayout(filenameLayout);
 
     QFormLayout *layout = new QFormLayout;
-    layout->addRow(label);
+    layout->addRow(intro);
     layout->addRow("Model name: ", nameLineEdit);
     layout->addRow("Choose directory to save circuit in: ", browser);
     layout->addRow("Save circuit as: ", filename);
@@ -68,21 +65,33 @@ SaveWizardPage::SaveWizardPage(bool saveOnly, Netlist *netlist, QWidget *parent)
 
 // ===================== PRIVATE FUNCTIONS =====================================
 
-/* Private Function: saveNetlist()
+/* Private Function: processInput()
  * -------------------------------
- * Saves netlist to file with all settings
- * given in the wizard. Called when the user
- * clicks next.
+ * Send simulation settings to netlist.
+ * Called when the user clicks next.
  */
-void SaveWizardPage::saveNetlist()
+void SaveWizardPage::processInput()
 {
     netlist->setName(field("circuitName").toString());
     netlist->setAnalysis(field("simOptions").toString());
     netlist->setInitialConditions(field("initialConditions").toString());
-    netlist->writeToFile(getFilename());
 }
 
 // ====================== PROTECTED FUNCTIONS ==================================
+
+void SaveWizardPage::initializePage()
+{
+    if (!saveOnly && field("loadCircuit").toBool()) {
+        intro->setText("Save circuit with simulation settings to a new file"
+                       " or leave blank to append to existing file.");
+        nameLineEdit->setEnabled(false);
+    } else {
+        intro->setText("Save your circuit to a file so that you can run"
+                       " this simulation again without drawing a new schematic. "
+                       "Once you save your circuit, you cannot edit the circuit or"
+                       " simulation settings further in this wizard.");
+    }
+}
 
 /* Protected Function: validatePage()
  * ---------------------------------
@@ -92,14 +101,29 @@ void SaveWizardPage::saveNetlist()
  * the netlist to file.
  */
 bool SaveWizardPage::validatePage() {
-    if (saveDirLineEdit->text() == "" ||
-            filenameLineEdit->text() == "") return false;
+    if (saveDirLineEdit->text().isEmpty() ||
+            filenameLineEdit->text().isEmpty()) {
+        if (saveOnly) return false;
+        if (!field("loadCircuit").toBool()) return false;
+        if (!saveDirLineEdit->text().isEmpty() ||
+                !filenameLineEdit->text().isEmpty()) return false;
+        processInput();
+        netlist->appendTo(field("filename").toString());
+        return true;
+    }
     if (!QDir(saveDirLineEdit->text()).exists()) return false;
     if (!saveOnly && QMessageBox::question(this,
                                  "Start simulation?",
-                                 "Continue?\nYou will not be able to return to this page",
-                                 (QMessageBox::Cancel | QMessageBox::Yes)) == QMessageBox::Cancel) return false;
-    saveNetlist();
+                                 "Continue?\nYou will not be able to return to "
+                                           "this page",
+                                 (QMessageBox::Cancel | QMessageBox::Yes))
+            == QMessageBox::Cancel) return false;
+    processInput();
+    if (!saveOnly && field("loadCircuit").toBool()) {
+            netlist->copyAndAppend(field("filename").toString(), getFilename());
+    } else {
+        netlist->writeToFile(getFilename());
+    }
     return true;
 }
 
@@ -109,7 +133,13 @@ bool SaveWizardPage::validatePage() {
  * is given.
  */
 bool SaveWizardPage::isComplete() const {
-    if (saveDirLineEdit->text() == "" ||
-            filenameLineEdit->text() == "") return false;
+    if (saveDirLineEdit->text().isEmpty() ||
+            filenameLineEdit->text().isEmpty()) {
+        if (saveOnly) return false;
+        if (!field("loadCircuit").toBool()) return false;
+        if (!saveDirLineEdit->text().isEmpty() ||
+                !filenameLineEdit->text().isEmpty()) return false;
+        return true;
+    }
     return QDir(saveDirLineEdit->text()).exists();
 }

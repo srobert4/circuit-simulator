@@ -5,8 +5,8 @@
  * Create node and set flags. Make moveable and visible
  * if not associated with an element.
  */
-Node::Node(SchematicItem *element, QGraphicsItem *parent) :
-    SchematicItem("node", parent)
+Node::Node(QGraphicsItem *element, QGraphicsItem *parent) :
+    QGraphicsItem(parent)
 {
     setAcceptHoverEvents(true);
     setFlag(ItemIsSelectable);

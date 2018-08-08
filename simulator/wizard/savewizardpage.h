@@ -2,7 +2,7 @@
 #define SAVEWIZARDPAGE_H
 
 #include <QtWidgets>
-#include "netlist.h"
+#include "../simulation/netlist.h"
 
 class SaveWizardPage : public QWizardPage
 {
@@ -15,8 +15,10 @@ public:
 protected:
     virtual bool validatePage() override;
     virtual bool isComplete() const override;
+    virtual void initializePage() override;
 
 private:
+    QLabel *intro;
     QLineEdit *nameLineEdit;
     QLineEdit *saveDirLineEdit;
     QLineEdit *filenameLineEdit;
@@ -24,7 +26,7 @@ private:
     bool saveOnly;
     Netlist *netlist;
 
-    void saveNetlist();
+    void processInput();
 };
 
 #endif // SAVEWIZARDPAGE_H

@@ -2,7 +2,7 @@
 #define ICWIZARDPAGE_H
 
 #include <QtWidgets>
-#include "netlist.h"
+#include "../simulation/netlist.h"
 
 /* Class: ICWizardPage
  * -------------------
@@ -24,6 +24,7 @@ private:
     Netlist *netlist;
     QLineEdit *outputLine;
     QVBoxLayout *layout;
+    QSet<QString> nodeNames;
 
 signals:
 

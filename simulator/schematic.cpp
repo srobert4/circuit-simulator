@@ -117,14 +117,15 @@ void Schematic::stopDrawingWire(Node *endNode)
 
 /* Private Function: gridPos(qreal x, qreal y)
  * -------------------------------------------
- * Returns the grid position at the upper diagonal
- * to the given point (x,y).
- *
- * TODO: snap to closest point.
+ * Returns the grid position closest to the given point (x,y).
  */
 QPointF Schematic::gridPos(qreal x, qreal y)
 {
-    return QPointF(int(x) - (int(x) % gridSize), int(y) - (int(y) % gridSize));
+    int newX = int(x) - (int(x) % gridSize);
+    if (int(x) % gridSize > gridSize / 2) newX += gridSize;
+    int newY = int(y) - (int(y) % gridSize);
+    if (int(y) % gridSize > gridSize / 2) newY += gridSize;
+    return QPointF(newX, newY);
 }
 
 /* Private Function: gridPos(QPointF)

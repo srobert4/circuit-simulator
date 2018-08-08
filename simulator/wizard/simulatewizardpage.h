@@ -2,8 +2,8 @@
 #define SIMULATEWIZARDPAGE_H
 
 #include <QtWidgets>
-#include "netlist.h"
-#include "spiceengine.h"
+#include "../simulation/netlist.h"
+#include "../simulation/spiceengine.h"
 
 class SimulateWizardPage : public QWizardPage
 {

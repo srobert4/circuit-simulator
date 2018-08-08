@@ -5,9 +5,9 @@
 #include <QtWidgets>
 
 #include "node.h"
-#include "boundarycondition.h"
+#include "../simulation/boundarycondition.h"
 
-class CircuitElement : public SchematicItem
+class CircuitElement : public QObject, public QGraphicsItem
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
@@ -49,6 +49,7 @@ public:
     QString getName() { return prefix + name; }
     QString getValue() { return value + unitMod; }
     QString getExternalFile() { return externalFile; }
+    QString getSubtype() { return subtype; }
 
 protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
@@ -74,6 +75,7 @@ private:
     QString mu;
     QString units;
     QString externalFile;
+    QString subtype;
 
     // Dialog box
     QDialog *dialogBox;

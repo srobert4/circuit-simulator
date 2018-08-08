@@ -9,7 +9,7 @@
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
     ngSpice_Init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
-    ngSpice_Init_Sync(getvoltage, nullptr, nullptr, nullptr, this);
+    ngSpice_Init_Sync(getvoltage, getcurrent, nullptr, nullptr, this);
 }
 
 // =============== PUBLIC FUNCTIONS ============================================
@@ -243,19 +243,19 @@ void SpiceEngine::_writeOutput(char *output)
     }
 }
 
-/* Public Function (ngspice only): _getVoltage(double *, double, char *)
+/* Public Function (ngspice only): _getBoundaryCondition(double *, double, char *)
  * ---------------------------------------------------------------------
- * Get boundary voltage at given node and time from bcs or netlist and
+ * Get boundary condition at given node and time from bcs or netlist and
  * set value of double at given address to this voltage.
  *
- * Called by ngspice callback GetVSRCData
+ * Called by ngspice callbacks GetVSRCData and GetISRCData
  */
-void SpiceEngine::_getVoltage(double *voltage, double t, char *node)
+void SpiceEngine::_getBoundaryCondition(double *value, double t, char *node)
 {
     if (netlist == nullptr) {
-        *voltage = bcs->value(node)->getState(t);
+        *value = bcs->value(node)->getState(t);
     } else {
-        *voltage = netlist->getBoundaryPressure(node, t);
+        *value = netlist->getBoundaryValue(node, t);
     }
 }
 
@@ -389,14 +389,29 @@ int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* user
  * -------------------------------------------
  * Called by bg thread when it needs a voltage
  * value for a voltage source with external input
- * Calls engine function _getVoltage to return
+ * Calls engine function _getBoundaryCondition to return
  * value.
  */
 int getvoltage(double* voltage, double t, char* node, int ident, void* userdata)
 {
     Q_UNUSED(ident);
     SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
-    engine->_getVoltage(voltage, t, node);
+    engine->_getBoundaryCondition(voltage, t, node);
+    return 0;
+}
+
+/* Callback function: getcurrent (GetISRCData)
+ * -------------------------------------------
+ * Called by bg thread when it needs a current
+ * value for a current source with external input
+ * Calls engine function _getBoundaryCondition to return
+ * value.
+ */
+int getcurrent(double* current, double t, char* node, int ident, void* userdata)
+{
+    Q_UNUSED(ident);
+    SpiceEngine *engine = static_cast<SpiceEngine *>(userdata);
+    engine->_getBoundaryCondition(current, t, node);
     return 0;
 }
 

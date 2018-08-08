@@ -2,7 +2,7 @@
 #define SIMOPTIONSWIZARDPAGE_H
 
 #include <QtWidgets>
-#include "netlist.h"
+#include "../simulation/netlist.h"
 
 /* Class: SimOptionsWizardPage
  * ---------------------------

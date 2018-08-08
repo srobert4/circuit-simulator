@@ -27,36 +27,35 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     schematic.cpp \
-    circuitelement.cpp \
     elementselector.cpp \
-    node.cpp \
-    netlist.cpp \
-    boundarycondition.cpp \
-    simulationwizard.cpp \
-    savewizardpage.cpp \
-    introwizardpage.cpp \
-    simulatewizardpage.cpp \
-    simoptionswizardpage.cpp \
-    icwizardpage.cpp \
-    spiceengine.cpp
+    graphics/circuitelement.cpp \
+    graphics/node.cpp \
+    simulation/netlist.cpp \
+    simulation/boundarycondition.cpp \
+    simulation/spiceengine.cpp \
+    wizard/simulationwizard.cpp \
+    wizard/savewizardpage.cpp \
+    wizard/introwizardpage.cpp \
+    wizard/simulatewizardpage.cpp \
+    wizard/simoptionswizardpage.cpp \
+    wizard/icwizardpage.cpp
 
 HEADERS += \
         mainwindow.h \
     schematic.h \
-    circuitelement.h \
     elementselector.h \
-    node.h \
-    schematicitem.h \
-    netlist.h \
-    boundarycondition.h \
-    simulationwizard.h \
-    savewizardpage.h \
-    introwizardpage.h \
-    simulatewizardpage.h \
-    simoptionswizardpage.h \
-    icwizardpage.h \
-    spiceengine.h \
-    saveintrowizardpage.h
+    graphics/circuitelement.h \
+    graphics/node.h \
+    simulation/netlist.h \
+    simulation/boundarycondition.h \
+    simulation/spiceengine.h \
+    wizard/simulationwizard.h \
+    wizard/savewizardpage.h \
+    wizard/introwizardpage.h \
+    wizard/simulatewizardpage.h \
+    wizard/simoptionswizardpage.h \
+    wizard/icwizardpage.h \
+    wizard/saveintrowizardpage.h
 
 RESOURCES += \
     images.qrc

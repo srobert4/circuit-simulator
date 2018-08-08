@@ -40,8 +40,9 @@ int SimulationWizard::nextId() const
     switch(currentId())
     {
     case Page_Intro:
-        if (field("loadCircuit").toBool())
-            return Page_RunSim;
+        if (field("loadCircuit").toBool() &&
+                field("completeCircuitFile").toBool())
+                return Page_RunSim;
         return Page_SimOptions;
 
     case Page_SaveIntro:
