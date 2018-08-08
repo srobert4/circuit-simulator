@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QtWidgets>
 #include "boundarycondition.h"
-#include "/usr/local/include/ngspice/sharedspice.h"
+#include "include/sharedspice.h"
 #include "netlist.h"
 
 int getchar(char *outputreturn, int ident, void *userdata);

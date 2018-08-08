@@ -227,7 +227,7 @@ QDialog *CircuitElement::createDialogBox(QString prefix,
                 [=](){ valueFileLineEdit->setText( QFileDialog::getOpenFileName(
                                                         extValueExt,
                                                         "Choose input file",
-                                                        "/home/srobertson",
+                                                        QDir::homePath(),
                                                         "All files (*.*)") ); });
 
         extValueLayout->addRow("Input file: ", browser);

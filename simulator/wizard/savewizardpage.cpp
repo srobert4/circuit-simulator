@@ -32,7 +32,7 @@ SaveWizardPage::SaveWizardPage(bool saveOnly, Netlist *netlist, QWidget *parent)
             [=](){ saveDirLineEdit->setText( QFileDialog::getExistingDirectory(
                                                  browser,
                                                  "Choose save directory",
-                                                 "/home/srobertson",
+                                                 QDir::homePath(),
                                                  QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
                                                  )); });
 

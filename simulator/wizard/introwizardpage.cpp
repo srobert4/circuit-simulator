@@ -34,7 +34,7 @@ IntroWizardPage::IntroWizardPage(QMap<QString, BoundaryCondition *> *bcMap,
         fileLineEdit->setText( QFileDialog::getOpenFileName(
                                    fileLoader,
                                    "Choose file",
-                                   "/home/srobertson",
+                                   QDir::homePath(),
                                    "All files (*.cir)"));
         emit completeChanged();
     });
@@ -138,7 +138,7 @@ void IntroWizardPage::showExternalInputSelector()
             inputFileLineEdit->setText( QFileDialog::getOpenFileName(
                                        inputSelector,
                                        "Choose file",
-                                       "/home/srobertson",
+                                       QDir::homePath(),
                                        "All files (*.*)"));
         });
         inputSelectorLayout->addWidget(browseButton, i + 1, 2);

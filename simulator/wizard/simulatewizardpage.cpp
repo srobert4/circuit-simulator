@@ -214,7 +214,7 @@ QWidget *SimulateWizardPage::getPlotWidget()
             [=](){ filenameLineEdit->setText( QFileDialog::getOpenFileName(
                                                  saveOptionsWidget,
                                                  "Choose file",
-                                                 "/home/srobertson",
+                                                 QDir::homePath(),
                                                   "All files")); });
     // file type
     QHBoxLayout *formatLayout = new QHBoxLayout;
@@ -265,7 +265,7 @@ QWidget *SimulateWizardPage::getSaveWidget()
             [=](){ filenameLineEdit->setText( QFileDialog::getOpenFileName(
                                                  saveWidget,
                                                  "Choose file",
-                                                 "/home/srobertson",
+                                                 QDir::homePath(),
                                                   "All files")); });
     // format
     QHBoxLayout *formatLayout = new QHBoxLayout;
@@ -354,8 +354,9 @@ void SimulateWizardPage::plot()
     QApplication::processEvents();
 
     QString filename = (field("savePlot").toBool() ?
-                            field("plotFilename").toString() : "/tmp/gnuout");
-    if (filename.isEmpty()) filename = "/tmp/gnuout";
+                            field("plotFilename").toString() :
+                            QDir::toNativeSeparators(QDir::tempPath() + "/gnuout"));
+    if (filename.isEmpty()) filename = QDir::toNativeSeparators(QDir::tempPath() + "/gnuout");
     int ret = engine->plotResults(toPlot,
                                   field("plotFormat").toString() == "PNG",
                                   filename);
