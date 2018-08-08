@@ -105,8 +105,8 @@ SimulateWizardPage::SimulateWizardPage(Netlist *netlist,
 void SimulateWizardPage::showErrorMessage()
 {
     QString message;
-    engine->getErrorStatus(message);
-    QMessageBox::critical(this, "Simulation Error", message);
+    if (engine->getErrorStatus(message))
+        QMessageBox::critical(this, "Simulation Error", message);
 }
 
 /* Private Function: startSimulation()
