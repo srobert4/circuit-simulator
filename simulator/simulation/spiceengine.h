@@ -23,6 +23,7 @@ class SpiceEngine : public QObject
 public:
     explicit SpiceEngine(QObject *parent = nullptr);
     ~SpiceEngine();
+    void init();
     int startSimulation(QString filename,
                          const QMap<QString, BoundaryCondition *> *bcs,
                          bool dump, QString dumpFilename);

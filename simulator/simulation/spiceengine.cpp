@@ -8,14 +8,6 @@
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
     lngspice = new QLibrary("ngspice", this);
-
-    InitFunction init = (InitFunction)lngspice->resolve("ngSpice_Init");
-    init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
-    InitSyncFunction initSync = (InitSyncFunction)lngspice->resolve("ngSpice_Init_Sync");
-    initSync(getvoltage, getcurrent, nullptr, nullptr, this);
-    ngspice_command = (CommandFunction)lngspice->resolve("ngSpice_Command");
-    ngspice_running = (RunningFunction)lngspice->resolve("ngSpice_running");
-    ngspice_curPlot = (CurPlotFunction)lngspice->resolve("ngSpice_CurPlot");
 }
 
 SpiceEngine::~SpiceEngine()
@@ -24,6 +16,27 @@ SpiceEngine::~SpiceEngine()
 }
 
 // =============== PUBLIC FUNCTIONS ============================================
+
+void SpiceEngine::init()
+{
+    InitFunction init = (InitFunction)lngspice->resolve("ngSpice_Init");
+    if (!init) {
+        emit spiceError("Could not load Ngspice function");
+        return;
+    }
+    init(getchar, getstat, ng_exit, nullptr, initdata, thread_runs, this);
+    InitSyncFunction initSync = (InitSyncFunction)lngspice->resolve("ngSpice_Init_Sync");
+    if (!initSync) {
+        emit spiceError("Could not load Ngspice function");
+        return;
+    }
+    initSync(getvoltage, getcurrent, nullptr, nullptr, this);
+    ngspice_command = (CommandFunction)lngspice->resolve("ngSpice_Command");
+    ngspice_running = (RunningFunction)lngspice->resolve("ngSpice_running");
+    ngspice_curPlot = (CurPlotFunction)lngspice->resolve("ngSpice_CurPlot");
+    if (!ngspice_command || !ngspice_running || !ngspice_curPlot)
+        emit spiceError("Could not load Ngspice function");
+}
 
 /* Public Function: getErrorStatus(QString&)
  * -----------------------------------------
@@ -143,7 +156,7 @@ int SpiceEngine::saveResults(QList<QString> vecs, bool bin, QString filename)
 {
     QString command = "write " + filename + " ";
     foreach(QString vec, vecs) command += vec + " ";
-    int ret;
+    int ret = 0;
     if (!bin) ret = this->command("set filetype=ascii");
     if (ret != 0) {
         setErrorFlag("NGSPICE: Error changing ngspice settings");

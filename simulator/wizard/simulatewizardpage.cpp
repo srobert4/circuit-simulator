@@ -87,6 +87,7 @@ SimulateWizardPage::SimulateWizardPage(Netlist *netlist,
     connect(this->engine, &SpiceEngine::initDataReady,
             this, &SimulateWizardPage::initData,
             Qt::QueuedConnection);
+    engine->init();
 
     layout = new QVBoxLayout;
     layout->addWidget(runWidget);
