@@ -8,7 +8,7 @@ class ElementSelector : public QWidget
 {
     Q_OBJECT
 public:
-    explicit ElementSelector(Schematic *schematic, QWidget *parent = nullptr);
+    explicit ElementSelector(QWidget *parent = nullptr);
     void addButton(const QString &buttonLabel,
                    const QString &imgPath,
                    const QString &imgSelectedPath,
@@ -27,7 +27,6 @@ protected:
 private:
     QGridLayout *layout;
     QButtonGroup *buttons;
-    Schematic *schematic;
     QMap<int, CircuitElement::ElementProperties> properties;
     QMap<int, QString> shadowImagePaths;
     int curId = 1;
@@ -35,6 +34,11 @@ private:
     const qreal elementWidth = 160.0;
 
     void deselectAll();
+
+signals:
+    void setSchematicMode(Schematic::Mode mode);
+    void sendElementProperties(CircuitElement::ElementProperties properties,
+                               QString path);
 
 public slots:
     void slotButtonPressed(int id);

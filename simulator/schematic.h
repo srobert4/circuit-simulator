@@ -1,9 +1,6 @@
 #ifndef SCHEMATIC_H
 #define SCHEMATIC_H
 
-#include <iostream>       // std::cout, std::endl
-#include <thread>         // std::this_thread::sleep_for
-#include <chrono>         // std::chrono::seconds
 #include <QtWidgets>
 
 #include "graphics/circuitelement.h"
@@ -23,8 +20,8 @@ public:
     enum { NoStartError = 1, IncompleteError = 2 };
 
     void setMode(Mode mode) { this->mode = mode; }
-    void setElementProperties(CircuitElement::ElementProperties &properties,
-                              QString &shadowPath);
+    void setElementProperties(CircuitElement::ElementProperties properties,
+                              QString shadowPath);
 
     void simulatePressed() { simulate(); }
     void deletePressed() { deleteSelection(); }
@@ -32,6 +29,7 @@ public:
     void savePressed() { simulate(true); }
 
 protected:
+//    void mousePressEvent(QGraphicsSceneMouseEvent *event);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     void drawBackground(QPainter *painter, const QRectF &rect);
@@ -56,6 +54,7 @@ private:
     // Track mouse
     QPointF curPos;
     qreal lastClickX, lastClickY;
+    bool dragging = false;
 
     // Drawing wires
     Node *startNode;

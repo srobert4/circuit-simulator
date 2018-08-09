@@ -18,7 +18,14 @@ MainWindow::MainWindow(QWidget *parent)
     // Create Schematic and Selector
     schem = new Schematic(this);
 
-    selector = new ElementSelector(schem, this);
+    selector = new ElementSelector(this);
+    connect(schem, &Schematic::schematicClicked,
+            selector, &ElementSelector::slotSchematicClicked);
+    connect(selector, &ElementSelector::setSchematicMode,
+            schem, &Schematic::setMode);
+    connect(selector, &ElementSelector::sendElementProperties,
+            schem, &Schematic::setElementProperties);
+
     QString units;
     const QChar Ohms(0x03A9);
     units.setUnicode(&Ohms, 1);

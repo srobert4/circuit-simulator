@@ -25,8 +25,8 @@ Schematic::Schematic(QObject *parent)
  * selectedPath - red image shown when element is selected
  * shadowPath - grey image shown when image is being placed
  */
-void Schematic::setElementProperties(CircuitElement::ElementProperties &properties,
-                                     QString &shadowPath)
+void Schematic::setElementProperties(CircuitElement::ElementProperties properties,
+                                     QString shadowPath)
 {
     elementProperties = properties;
     shadowImage = QPixmap(shadowPath);

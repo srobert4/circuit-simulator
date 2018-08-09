@@ -7,13 +7,9 @@
  * emitted when the Selector is clicked outside a button
  * to the slot to deselect all buttons.
  */
-ElementSelector::ElementSelector(Schematic *schematic, QWidget *parent
+ElementSelector::ElementSelector(QWidget *parent
 ) : QWidget(parent)
 {
-    this->schematic = schematic;
-    connect(schematic, SIGNAL(schematicClicked()),
-            this, SLOT(slotSchematicClicked()));
-
     buttons = new QButtonGroup(this);
     connect(buttons, SIGNAL(buttonPressed(int)),
             this, SLOT(slotButtonPressed(int)));
@@ -116,12 +112,12 @@ void ElementSelector::slotButtonPressed(int id)
 void ElementSelector::slotButtonReleased(int id)
 {
     if (deselectOnRelease) {
-        schematic->setMode(Schematic::Edit);
+        emit setSchematicMode(Schematic::Edit);
         deselectAll();
         deselectOnRelease = false;
         return;
     }
-    schematic->setMode(Schematic::Build);
-    schematic->setElementProperties(properties[id],
-                                    shadowImagePaths[id]);
+    emit setSchematicMode(Schematic::Build);
+    emit sendElementProperties(properties[id],
+                               shadowImagePaths[id]);
 }
