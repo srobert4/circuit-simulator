@@ -5,9 +5,15 @@
 #include "../simulation/netlist.h"
 
 /* Class: ICWizardPage
- * -------------------
- * Allows users to set initial conditions
- * for any nodes on the circuit schematic
+ * ===================
+ * The ICWizardPage allows the user to set initial conditions
+ * for nodes in the schematic
+ *
+ * This page is only displayed if Transient analysis is selected
+ * on the SimOptionsWizardPage
+ *
+ * All fields on this page are optional, but any input provided must be
+ * numeric or the Next button will be disabled
  */
 class ICWizardPage : public QWizardPage
 {

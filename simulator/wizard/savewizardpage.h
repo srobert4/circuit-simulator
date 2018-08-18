@@ -4,6 +4,16 @@
 #include <QtWidgets>
 #include "../simulation/netlist.h"
 
+/* CLASS: SaveWizardPage
+ * =====================
+ * The SaveWizardPage allows the user to save their netlist.
+ *
+ * The user can optionally give the circuit a name, and must provide
+ * a valid directory and a filename.
+ *
+ * When the user clicks the button to continue to the simulation, a dialogBox
+ * confirms that they want to save and cannot return to editing their netlist.
+ */
 class SaveWizardPage : public QWizardPage
 {
     Q_OBJECT

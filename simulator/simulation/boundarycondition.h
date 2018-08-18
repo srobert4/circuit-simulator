@@ -5,6 +5,20 @@
 #include <cmath>
 #include <QtMath>
 
+/* CLASS: BoundaryCondition
+ * ========================
+ * Inherits: QObject
+ * Parent: ?
+ *
+ * A BoundaryCondition object parses an input file of the format <time> <value>
+ * and allows the user to get the value at the given boundary at any given
+ * time.
+ *
+ * The value is linearly interpolated between points in the given file.
+ *
+ * The static funciton checkFile(QString filename) allows other classes to check
+ * if a file is properly formatted to be used as a BoundaryCondition file.
+ */
 class BoundaryCondition : public QObject
 {
     Q_OBJECT

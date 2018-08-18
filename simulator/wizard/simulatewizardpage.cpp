@@ -62,7 +62,7 @@ SimulateWizardPage::SimulateWizardPage(Netlist *netlist,
     // restartButton -> stop and restart simulation
     connect(restartButton, &QPushButton::pressed, [=](){
         stopSimulation();
-        progressBar->setValue(0);
+        updateStatus(0);
         startSimulation();
     });
 
@@ -446,6 +446,10 @@ void SimulateWizardPage::updateStatus(int progress)
         plotButton->setEnabled(true);
         saveButton->setEnabled(true);
         pauseButton->setEnabled(false);
+    } else {
+        plotButton->setEnabled(false);
+        saveButton->setEnabled(false);
+        pauseButton->setEnabled(true);
     }
     emit completeChanged();
 }

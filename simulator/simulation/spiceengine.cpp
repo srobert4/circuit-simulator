@@ -2,14 +2,17 @@
 
 /* Constructor: SpiceEngine(QObject *)
  * -----------------------------------
- * Loads ngspice library and resolves necessary ngSpice functions.
- * Calls init functions to send the callback functions to ngspice
+ * Loads ngspice library
  */
 SpiceEngine::SpiceEngine(QObject *parent) : QObject(parent)
 {
     lngspice = new QLibrary("ngspice", this);
 }
 
+/* Destructor: ~SpiceEngine()
+ * --------------------------
+ * Unloads ngspice library
+ */
 SpiceEngine::~SpiceEngine()
 {
     lngspice->unload();
@@ -17,6 +20,15 @@ SpiceEngine::~SpiceEngine()
 
 // =============== PUBLIC FUNCTIONS ============================================
 
+/* Public Function: init()
+ * -----------------------
+ * Resolves relevant ngspice functions: ngSpice_Init, ngSpice_Init_Sync,
+ * ngSpice_Command, ngSpice_running and ngSpice_CurPlot
+ * Calls ngSpice_Init and ngSpiceInit_Sync to initialize the ngspice engine
+ * with the callback functions
+ *
+ * Emits a spiceError if any library functions could not be resolved
+ */
 void SpiceEngine::init()
 {
     InitFunction init = (InitFunction)lngspice->resolve("ngSpice_Init");
@@ -333,6 +345,10 @@ void SpiceEngine::setErrorFlag(QString message)
 
 /* Callback Function: initdata (SendInitData)
  * ------------------------------------------
+ * Callback called from bg thread in ngspice to transfer
+ * initialization information.
+ *
+ * Sends information to spiceEngine to display in wizard
  */
 int initdata(pvecinfoall intdata, int ident, void* userdata)
 {
@@ -391,10 +407,11 @@ int thread_runs(bool noruns, int ident, void* userdata)
 /* Callback function: ng_exit (ControlledExit)
  * -------------------------------------------
  * Called from bg thread in ngspice if fcn controlled_exit()
- * is hit. Sets error flag
+ * is hit.
+ * Calls engine function _quit to quit ngspice and unload library
  *
- * TODO: fix this up. still using example code that is possible
- * for dynamically linked ngspice library
+ * -- TODO --
+ * Better understand what this function actually needs to do
  */
 int ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* userdata)
 {

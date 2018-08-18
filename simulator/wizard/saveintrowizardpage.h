@@ -3,11 +3,12 @@
 
 #include <QtWidgets>
 
-/* Class: SaveIntroWizardPage
- * --------------------------
- * Simple introduction page asking
- * for a yes/no answer to adding
- * simulation settings to saved netlist.
+/* CLASS: SaveIntroWizardPage
+ * ===========================
+ * The SaveIntroWizardPage is shown instead of the IntroWizardPage when the user
+ * clicks Save Circuit instead of Run Simulation in the toolbar.
+ *
+ * It asks the user if they want to save the circuit only or add simulation settings
  */
 class SaveIntroWizardPage : public QWizardPage
 {

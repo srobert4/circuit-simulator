@@ -3,9 +3,8 @@
 /* Constructor: ElementSelector(QWidget *parent)
  * ---------------------------------------------
  * The constructor creates a QButtonGroup to hold
- * the buttons, a QGridLayout and connects the signal
- * emitted when the Selector is clicked outside a button
- * to the slot to deselect all buttons.
+ * the buttons, sets layout to a QVBoxLayout and connects buttonPressed/Released
+ * signals to corresponding slots
  */
 ElementSelector::ElementSelector(QWidget *parent
 ) : QWidget(parent)
@@ -17,7 +16,7 @@ ElementSelector::ElementSelector(QWidget *parent
             this, SLOT(slotButtonReleased(int)));
     deselectOnRelease = false;
 
-    layout = new QGridLayout(this);
+    layout = new QVBoxLayout(this);
     setLayout(layout);
 }
 
@@ -62,12 +61,14 @@ void ElementSelector::addButton(const QString &buttonLabel,
     QPushButton *button = new QPushButton(this);
     QIcon icon(elementProperties.image);
     button->setIcon(icon);
-    button->setIconSize(QSize(elementProperties.image.width() / 2, elementProperties.image.height() / 2));
+    button->setIconSize(QSize(elementProperties.image.width() / 2,
+                              elementProperties.image.height() / 2));
     button->setCheckable(true);
+    button->setToolTip(buttonLabel);
 
     // add button to selector
     buttons->addButton(button, curId);
-    layout->addWidget(button, curId, 0);
+    layout->addWidget(button);
 
     shadowImagePaths[curId] = imgShadowPath;
     properties[curId] = elementProperties;

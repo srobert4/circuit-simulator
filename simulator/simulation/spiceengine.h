@@ -8,6 +8,7 @@
 #include "include/sharedspice.h"
 #include "netlist.h"
 
+// Declaration of callbacks for ngspice
 int getchar(char *outputreturn, int ident, void *userdata);
 int getstat(char *outputreturn, int ident, void *userdata);
 int ng_exit(int, bool, bool, int ident, void *);
@@ -17,6 +18,17 @@ int data(pvecvaluesall vdata, int numvecs, int ident, void *userdata);
 int getvoltage(double *voltage, double t, char *node, int ident, void *userdata);
 int getcurrent(double *current, double t, char *node, int ident, void *userdata);
 
+/* CLASS: SpiceEngine
+ * ==================
+ * Inherits: QObject
+ * Parent: SimulateWizardPage
+ *
+ * The SpiceEngine class handles all interaction with the ngspice shared library.
+ * It uses the QLibrary class to dynamically load the library and resolve methods.
+ *
+ * Refer to chapter 19 of the ngspice user manual to further understand the ngspice
+ * shared library.
+ */
 class SpiceEngine : public QObject
 {
     Q_OBJECT
@@ -42,19 +54,27 @@ public:
     int plotResults(QList<QString> vecs, bool png, QString filename);
     bool getErrorStatus(QString &message);
 
+    // getPlotInfo() returns a string that can be used by the
+    // wizard page to display information about the current plot.
+    // It simply nicely formats the information received from initialization
+    // of the simulation.
     QString getPlotInfo() {
         return plotName + ": \n" +
                 "Circuit: " + plotTitle + "\n" +
                 "Date: " + plotDate + "\n" +
                 "Plot: " + plotType; }
-    bool no_bg = true;
+    bool no_bg = true; // used to determine if the background thread is running
     bool errorflag = false;
+    // The mutex and condition variable are used to protect
+    // no_bg and wait for it to change without blocking the
+    // main thread.
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 private:
     // ngspice
     QLibrary *lngspice;
+    // Typedefs for ngspice functions
     typedef int (*InitFunction)(SendChar*, SendStat*, ControlledExit*, SendData*, SendInitData*,
                         BGThreadRunning*, void*);
     typedef int (*InitSyncFunction)(GetVSRCData* , GetISRCData* , GetSyncData* , int*,
@@ -62,7 +82,7 @@ private:
     typedef int (*CommandFunction)(char*);
     typedef bool (*RunningFunction)(void);
     typedef char *(*CurPlotFunction)(void);
-
+    // Handles for ngspice functions
     CommandFunction ngspice_command;
     RunningFunction ngspice_running;
     CurPlotFunction ngspice_curPlot;
@@ -76,6 +96,7 @@ private:
     int halt() { return ngspice_command(const_cast<char *>("bg_halt")); }
     int resume() { return ngspice_command(const_cast<char *>("bg_resume")); }
 
+    // Other simulation variables
     const QMap<QString, BoundaryCondition *> *bcs;
     QString filename;
     bool dump = false;

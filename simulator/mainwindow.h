@@ -6,6 +6,19 @@
 
 #include <QtWidgets>
 
+/* CLASS: MainWindow
+ * =================
+ * Inherits: QMainWindow
+ * Parent: None
+ * Children:
+ *  - Schematic
+ *  - ElementSelector
+ *
+ * The MainWindow is responsible for setting up the main window with a central
+ * widget (Schematic), left dock widget (ElementSelector) and toolbar.
+ * The MainWindow adds buttons to the ElementSelector.
+ */
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

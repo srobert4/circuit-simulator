@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 
-
 /* Constructor: MainWindow(QWidget *parent)
  * ----------------------------------------
  * MainWindow handles the communication between the
@@ -9,7 +8,7 @@
  * The MainWindow layout has the Schematic as the CentralWidget
  * and the Selector is set as the left dockWidget.
  *
- * The MainWindow is currently responsible for adding buttons
+ * The MainWindow is responsible for adding buttons
  * to the Selector.
  */
 MainWindow::MainWindow(QWidget *parent)
@@ -26,6 +25,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(selector, &ElementSelector::sendElementProperties,
             schem, &Schematic::setElementProperties);
 
+    // Add buttons to ElementSelector
+    // Each button will be associated with the
+    // images and information needed for the dialog box
     QString units;
     const QChar Ohms(0x03A9);
     units.setUnicode(&Ohms, 1);
@@ -54,12 +56,12 @@ MainWindow::MainWindow(QWidget *parent)
                         ":/images/startGroundSelected.png",
                         ":/images/startGroundShadow.png",
                         false, false, "", "", 0.5);
-    selector->addButton("Pressure",
+    selector->addButton("Dirichlet Surface (Pressure)",
                         ":/images/voltageSource.png",
                         ":/images/voltageSourceSelected.png",
                         ":/images/voltageSourceShadow.png",
                         true, true, "V", "V", 1);
-    selector->addButton("Flow",
+    selector->addButton("Neumann Surface (Flow)",
                         ":/images/currentSource.png",
                         ":/images/currentSourceSelected.png",
                         ":/images/currentSourceShadow.png",
@@ -69,6 +71,9 @@ MainWindow::MainWindow(QWidget *parent)
     view = new QGraphicsView(schem, this);
     view->setMouseTracking(true);
     view->setDragMode(QGraphicsView::RubberBandDrag);
+    // -- TODO --
+    // The size is currently hard coded but this should
+    // be changed.
     schem->setSceneRect(0, 0, 800, 800); // set initial size
     setCentralWidget(view);
 
@@ -87,6 +92,8 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *simulateButton = toolbar->addAction("Run simulation");
     QAction *saveButton = toolbar->addAction("Save Netlist");
 
+    // Each toolbar button is connected to a Schematic method to handle
+    // the click event.
     connect(deleteButton, &QAction::triggered, schem, &Schematic::deletePressed);
     connect(clearButton, &QAction::triggered, schem, &Schematic::clearPressed);
     connect(simulateButton, &QAction::triggered, schem, &Schematic::simulatePressed);

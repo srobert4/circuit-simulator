@@ -3,6 +3,25 @@
 
 #include <QtWidgets>
 
+/* CLASS: Node
+ * ===========
+ * The Node class represents a single node (displayed as a grey circle). The
+ * Node is a relatively complicated class because it must keep track of all nodes
+ * it is connected to, both directly and indirectly.
+ *
+ * Wires are drawn as two separate lines, a vertical and a horizontal segment.
+ * One segment is drawn by each node in the connection. The assignment of vertical
+ * and horizontal segments is made based on the relative position of the nodes.
+ * This logic could be greatly improved.
+ *
+ * When a node is deleted, it must ensure that no references to it remain in
+ * existence. Any node it is directly or indirectly connected has a pointer to this
+ * node, which must be removed. This is implemented in the destructor.
+ *
+ * -- TODO --
+ * - The logic for drawing wires could be improved to make nicer looking schematics
+ * - The logic for keeping track of connections could probably be simplified
+ */
 class Node : public QObject, public QGraphicsItem
 {
     Q_OBJECT
@@ -22,14 +41,16 @@ public:
     enum {Type = UserType + 3};
     int type() const override {return Type;}
     explicit Node(
-            QGraphicsItem *element = nullptr,
+            QGraphicsItem *element = nullptr, // null if not attached to an element
             QGraphicsItem *parent = nullptr
             );
     ~Node() override;
 
     // required functions
     QRectF boundingRect() const override;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;
+    void paint(QPainter *painter,
+               const QStyleOptionGraphicsItem *option,
+               QWidget *widget = nullptr) override;
 
     // connecting/disconnecting functions
     void connectNode(Node *node);

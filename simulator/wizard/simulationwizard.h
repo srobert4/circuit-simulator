@@ -11,11 +11,18 @@
 #include "icwizardpage.h"
 #include "saveintrowizardpage.h"
 
+/* CLASS: SimulationWizard
+ * =======================
+ * The SimulationWizard is used for saving netlists and running simulations.
+ * It creates the wizard pages and implements the logic to switch between
+ * them.
+ */
 class SimulationWizard : public QWizard
 {
     Q_OBJECT
 public:
-    enum { Page_Intro, Page_SaveIntro, Page_SimOptions, Page_InitialConds, Page_SaveAs, Page_RunSim };
+    enum { Page_Intro, Page_SaveIntro, Page_SimOptions, Page_InitialConds,
+           Page_SaveAs, Page_RunSim };
 
     explicit SimulationWizard(Netlist *netlist,
                               bool saveOnly,
