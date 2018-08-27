@@ -11,7 +11,7 @@ This program requires Ngspice installed with the shared library. Download the ta
 ### To run the program
 Type `make` to compile the simulator executable.
 
-Run the program with `./simulator <circuit filename>`
+Run the program with `./simulator <circuit filename>`. Example files are provided in the `example_circuits` directory. `noext.cir` and `ext.cir` both describe a transient analysis on an RCR model, however in `noext.cir`, the voltage source is constant, and in `ext.cir` the voltage source is external. For `ext.cir`, example source files are provided in the `pressure_samples` directory.
 
 If you want to suppress any requests for input, you can use the flag `-s` or `--silent` to run the simulation and save all vectors
 in ASCII format to the file out.raw. CAUTION: out.raw may be overwritten if you run this repeatedly without renaming or moving out.raw. If your netlist contains external input elements, you will still need to provide a filename and period at the prompt.
