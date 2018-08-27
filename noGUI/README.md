@@ -16,9 +16,11 @@ Run the program with `./simulator <circuit filename>`
 If you want to suppress any requests for input, you can use the flag `-s` or `--silent` to run the simulation and save all vectors
 in ASCII format to the file out.raw. CAUTION: out.raw may be overwritten if you run this repeatedly without renaming or moving out.raw. If your netlist contains external input elements, you will still need to provide a filename and period at the prompt.
 
-### For more complicated functionality
+### Extensions to this code
 If you want to customize the functionality, you can either run your simulation using the Ngspice command line interpreter, or customize the program code.
 
 If you want to use Ngspice directly, enter the interpreter by entering the command `ngspice` at a terminal prompt. You can then load your file with the command `source <filename>`, and run the simulation with the command `run`. The commands `write` and `plot` will save and plot your vectors, respectively. `plot` will not work if you don't have X installed. To save vectors in ASCII format, enter the command `set filetype=ascii` before the `write` command. Chapter 17 of the Ngspice manual covers using the interpreter in detail.
 
 If you want to customize this code, edit the file `main.cc`, below the comment that begins "To customize this program, edit the code below."
+
+I would also recommend implementing more command line arguments and flags, to reduce the need for user input (e.g. flags to specify boundary condition files). Another useful extension would be to allow the user to provide a YAML file as a command line argument that contains the file and period for each external element.
