@@ -98,6 +98,13 @@ int main(int argc, char** argv)
     }
     pthread_mutex_unlock(&mutex);
 
+    /*
+    * To customize this program, edit the code below. You likely want to use
+    * the function ngSpice_Command((char *)"your ngspice commmand here") to send
+    * regular ngspice commands. For a full description of how to use the shared
+    * library API, check out chapter 19 of the Ngspice manual.
+    */
+
     // Offer to save
     string save;
     cout << "Save output vectors? [y/n] ";
