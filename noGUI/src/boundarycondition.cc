@@ -34,8 +34,6 @@ BoundaryCondition::BoundaryCondition(const std::string &filename, double period)
 
 }
 
-BoundaryCondition::~BoundaryCondition() {}
-
 double BoundaryCondition::get_state(double time) 
 {
 	std::map<double, double>::iterator high, low;

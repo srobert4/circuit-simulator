@@ -9,8 +9,12 @@ This program will run the commands listed in the file provided, then offer to sa
 This program requires Ngspice installed with the shared library. Download the tarball from [!here](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/28/ngspice-28.tar.gz/download) or clone the git repository with the command `git clone git://git.code.sf.net/p/ngspice/ngspice` and follow the instructions in the file `INSTALL` in the top level `ngspice` directory. Use the flag `--with-ngshared` to the `./configure` command.
 
 ### To run the program
-Type `make` to compile the simulator executable
+Type `make` to compile the simulator executable.
+
 Run the program with `./simulator <circuit filename>`
+
+If you want to suppress any requests for input, you can use the flag `-s` or `--silent` to run the simulation and save all vectors
+in ASCII format to the file out.raw. CAUTION: out.raw may be overwritten if you run this repeatedly without renaming or moving out.raw. If your netlist contains external input elements, you will still need to provide a filename and period at the prompt.
 
 ### For more complicated functionality
 If you want to customize the functionality, you can either run your simulation using the Ngspice command line interpreter, or customize the program code.

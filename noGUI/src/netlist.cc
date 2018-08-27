@@ -8,15 +8,11 @@ Implement netlist class
 #include <string.h>
 #include "netlist.h"
 
-int
-cieq(register char *p, register char *s);
-
 Netlist::Netlist(const std::string &name)
 {
 	this->netlist = NULL;
 	this->file_loaded = false;
 	this->constructed = false;
-	this->set_name(name);
 }
 
 Netlist::~Netlist()
@@ -46,7 +42,7 @@ int Netlist::load_from_file(
         std::string l = std::string(line);
 
         // check for boundary conditions necessary
-        if (l.find("external") != std::string::npos) { // TODO: make case insensitive
+        if (l.find("external") != std::string::npos) {
         	std::string elem_name = l.substr(0, l.find(" "));
         	
         	if (bc_files && bc_files->find(elem_name) != bc_files->end()) {
@@ -62,57 +58,34 @@ int Netlist::load_from_file(
     }
 
     this->file_loaded = true;
-
-    // TODO: allow for editing of netlist after loaded from file.
 	return 0;
 }
 
-bool Netlist::check_file_loaded()
-{
-	if(this->file_loaded){
-		std::cout << "Error: Cannot edit netlists loaded from file." << std::endl;
-		return true;
-	}
-	return false;
-}
-
-void Netlist::set_name(const std::string name)
-{
-	if (this->check_file_loaded()) return;
-	if (this->netlist_vec.empty()) {
-		this->netlist_vec.push_back(name);
-	} else {
-		this->netlist_vec[0] = name;
-	}
-}
-
-int Netlist::add_element(
-	const std::string &element, 
-	const std::string &name, 
-	const std::string &node_in, 
-	const std::string &node_out, 
-	const std::string &value, 
-	const std::string &units
+int Netlist::add_boundary_condition(
+	const std::string &element_name,
+	const std::string &file_given, 
+	const double &period_given
 )
 {	
-	if (this->check_file_loaded()) return 1;
-	// TODO: add error checking
 
-	// construct element
-	std::string element_line = element + name + " "  + node_in + " " + node_out + " " + value;
-	if(units.length() != 0) element_line += units;
-	
-	// add boundary conditions if necessary
-	if (value.compare("external") == 0) { // TODO : User tolower!
-		this->add_boundary_condition(element + name);
+	std::string file;
+	double period;
+	if (file_given == ""){
+		this->request_boundary_condition(element_name, file, period);
+	} else {
+		file = file_given;
+		period = period_given;
 	}
 
-	this->netlist_vec.push_back(element_line);
-
+	BoundaryCondition *cond = new BoundaryCondition(file, period);
+	char node_name_lower[element_name.length()];
+	for (size_t i = 0; i < element_name.length(); i++) {
+		node_name_lower[i] = std::tolower(element_name[i]);
+	}
+	this->bcs[node_name_lower] = cond;
 	return 0;
 }
 
-// TODO: update to ask for bc for specific node name
 void Netlist::request_boundary_condition(
 	const std::string &node_name, 
 	std::string &file, 
@@ -127,58 +100,18 @@ void Netlist::request_boundary_condition(
 	period = std::stod(period_str);
 }
 
-int Netlist::add_boundary_condition(
-	const std::string &node_name,
-	const std::string &file_given, 
-	const double &period_given
-)
-{	
 
-	std::string file;
-	double period;
-	if (file_given == ""){
-		this->request_boundary_condition(node_name, file, period);
-	} else {
-		file = file_given;
-		period = period_given;
-	}
-
-	BoundaryCondition *cond = new BoundaryCondition(file, period);
-	char node_name_lower[node_name.length()];
-	for (size_t i = 0; i < node_name.length(); i++) {
-		node_name_lower[i] = std::tolower(node_name[i]);
-	}
-	this->bcs[node_name_lower] = cond;
-	return 0;
-}
-
-int Netlist::add_initial_condition(const std::string &node_name, const std::string &ic)
-{	
-	if (this->check_file_loaded()) return 1;
-	std::string name;
-	size_t idx;
-	std::stoi(node_name, &idx);
-	name = (node_name.substr(idx) == "" ? "v(" + node_name + ")" : node_name);
-
-	this->netlist_vec.push_back(".ic " + name + "=" + ic);
-	return 0;
-}
-
-// TODO: Make this flexible for different analysis lines (.tran .dc)
-int Netlist::set_analysis(
-	const std::string &type, 
-	const std::string &step, 
-	const std::string &step_units, 
-	const std::string &time,
-	const std::string &time_units
-)
+double Netlist::get_boundary_condition(const std::string &node_name, double time)
 {
-	if (this->check_file_loaded()) return 1;
+ 	BoundaryCondition *bc = bcs[node_name];
+ 	return bc->get_state(time);
+}
 
-	std::string analysis = type + " " + step + step_units + " " + time + time_units;
-
-	this->netlist_vec.push_back(analysis);
-	return 0;
+char** Netlist::get_netlist()
+{	
+	if (this->construct_netlist() == 1)
+		return NULL;
+	return this->netlist;
 }
 
 int Netlist::construct_netlist()
@@ -202,10 +135,6 @@ int Netlist::construct_netlist()
 }
 
 size_t Netlist::get_length()
-/*
-Returns length of netlist including .end but
-not including NULL terminator.
-*/
 {
 	if (!this->constructed) return -1;
 	return this->netlist_vec.size() + 1;
@@ -228,15 +157,79 @@ void Netlist::unload_netlist()
 }
 	
 
-char** Netlist::get_netlist()
-{	
-	if (this->construct_netlist() == 1)
-		return NULL;
-	return this->netlist;
-}
+// UNUSED FUNCTIONS
+// The functions below may help if you want to extend this code to allow for building
+// netlists within the program.
 
-double Netlist::get_boundary_condition(const std::string &node_name, double time)
-{
- 	BoundaryCondition *bc = bcs[node_name];
- 	return bc->get_state(time);
-}
+// bool Netlist::check_file_loaded()
+// {
+// 	if(this->file_loaded){
+// 		std::cout << "Error: Cannot edit netlists loaded from file." << std::endl;
+// 		return true;
+// 	}
+// 	return false;
+// }
+
+// void Netlist::set_name(const std::string name)
+// {
+// 	if (this->check_file_loaded()) return;
+// 	if (this->netlist_vec.empty()) {
+// 		this->netlist_vec.push_back(name);
+// 	} else {
+// 		this->netlist_vec[0] = name;
+// 	}
+// }
+
+// int Netlist::add_element(
+// 	const std::string &element, 
+// 	const std::string &name, 
+// 	const std::string &node_in, 
+// 	const std::string &node_out, 
+// 	const std::string &value, 
+// 	const std::string &units
+// )
+// {	
+// 	if (this->check_file_loaded()) return 1;
+
+// 	// construct element
+// 	std::string element_line = element + name + " "  + node_in + " " + node_out + " " + value;
+// 	if(units.length() != 0) element_line += units;
+	
+// 	// add boundary conditions if necessary
+// 	if (value.compare("external") == 0) { // TODO : User tolower!
+// 		this->add_boundary_condition(element + name);
+// 	}
+
+// 	this->netlist_vec.push_back(element_line);
+
+// 	return 0;
+// }
+
+// int Netlist::add_initial_condition(const std::string &node_name, const std::string &ic)
+// {	
+// 	if (this->check_file_loaded()) return 1;
+// 	std::string name;
+// 	size_t idx;
+// 	std::stoi(node_name, &idx);
+// 	name = (node_name.substr(idx) == "" ? "v(" + node_name + ")" : node_name);
+
+// 	this->netlist_vec.push_back(".ic " + name + "=" + ic);
+// 	return 0;
+// }
+
+// // TODO: Make this flexible for different analysis lines (.tran .dc)
+// int Netlist::set_analysis(
+// 	const std::string &type, 
+// 	const std::string &step, 
+// 	const std::string &step_units, 
+// 	const std::string &time,
+// 	const std::string &time_units
+// )
+// {
+// 	if (this->check_file_loaded()) return 1;
+
+// 	std::string analysis = type + " " + step + step_units + " " + time + time_units;
+
+// 	this->netlist_vec.push_back(analysis);
+// 	return 0;
+// }

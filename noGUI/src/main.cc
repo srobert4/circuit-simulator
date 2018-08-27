@@ -1,3 +1,14 @@
+/*
+main.cc
+-------
+This code is based on the example code provided by Ngspice,
+which can be dowloaded at this link: 
+
+http://ngspice.sourceforge.net/ngspice-shared-lib/ngspice_cb.7z
+
+TODO: error checking
+*/
+
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -14,7 +25,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <pthread.h>
-
+#include <string.h>
 
 #include "sharedspice.h"
 #include "netlist.h"
@@ -27,7 +38,6 @@ set<string> vecnames;
 static bool errorflag = false;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-map<double, double> bcs;
 Netlist n;
 
 int
@@ -49,50 +59,72 @@ int
 ng_data(pvecvaluesall vdata, int numvecs, int ident, void* userdata);
 
 int
-ng_getvoltage(double* voltage, double t, char* node, int ident, void* userdata);
-
-int
-cieq(register char *p, register char *s);
+ng_getexternal(double* voltage, double t, char* node, int ident, void* userdata);
 
 int
 ciprefix(const char *p, const char *s);
 
 int main(int argc, char** argv)
 {
-    if (argc != 2) {
+    if (argc < 2) {
         cout << "Usage: ./main <file.cir>" << endl;
         return 0;
     }
+
+    bool silent;
+    if (argc > 2) {
+        silent = (strcmp(argv[2], "-s") == 0 || strcmp(argv[2], "--silent") == 0);
+    }
+    if (!silent) {
+        cout << "Welcome to the command line LPN simulator" << endl;
+        cout << "Print instructions? [y/n] ";
+        string instructions;
+        getline(cin, instructions);
+        if (tolower(instructions[0]) == 'y') {
+            cout << endl;
+            cout << "This program loads the file provided into ngspice and runs the simulation specified in the file." << endl;
+            cout << "If any of your elements require external input, you will be prompted to provide a file and a period." << endl;
+            cout << "Your file must be formatted with each line: <time> <value>, where time and value are doubles. The period " << endl;
+            cout << "should be a double that states the length of the file in time (commonly 1.0)." << endl;
+            cout << endl;
+            cout << "If you provide invalid files or period values, the behavior is undefined and the program may crash." << endl;
+            cout << endl;
+        }
+    }
+
+    // Create a Netlist object for this file.
+    // This will prompt the user to enter files for any
+    // external elements included in the file.
+    n = Netlist();
     const string circuitfile = argv[1];
-    map<string, string> boundaryconds;
-    n.load_from_file(circuitfile, &boundaryconds, 1.0); // too hardcoded?
+    n.load_from_file(circuitfile);
 
     int ret;
-    char *curplot, *vecname;
-    char **vecarray;
     
+    // Initialize Ngspice
     ret = ngSpice_Init(ng_getchar, ng_getstat, ng_exit,  NULL, ng_initdata, ng_thread_runs, NULL);
-    ret = ngSpice_Init_Sync(ng_getvoltage, NULL, NULL, NULL, NULL);
-    cout << "Init thread returned: " << ret << endl;
+    ret = ngSpice_Init_Sync(ng_getexternal, ng_getexternal, NULL, NULL, NULL);
 
-    cout << "****************************" << endl;
-    cout << "**  ngspice shared start  **" << endl;
-    cout << "****************************" << endl;
-
-    cout << endl;
-
-    /* load a ngspice input file with a tran simulation running for 15s */
-    ret = ngSpice_Circ(n.get_netlist());
+    // Load netlist
+    char **netlist_array = n.get_netlist();
+    if (netlist_array == NULL) {
+        cout << "Error loading netlist from file." << endl;
+        cout << "Check your file and try again." << endl;
+        cout << "Exiting..." << endl;
+        return 0;
+    }
+    ret = ngSpice_Circ(netlist_array);
     
+    // Run simulation
     pthread_mutex_lock(&mutex);
     ret = ngSpice_Command( (char*) "bg_run");
 
-    // wait for background thread to start
+    // Wait for background thread to start
     while(no_bg) {
         pthread_cond_wait(&cond, &mutex);
     }
 
-    // wait for background thread to exit
+    // Wait for background thread to exit
     while(!no_bg) {
         pthread_cond_wait(&cond, &mutex);
     }
@@ -105,7 +137,15 @@ int main(int argc, char** argv)
     * library API, check out chapter 19 of the Ngspice manual.
     */
 
-    // Offer to save
+    // Get vectors to save
+    if (silent) {
+        ret = ngSpice_Command((char*)"set filetype=ascii");
+        ret = ngSpice_Command((char*)"write out.raw");
+        cout << "All vectors saved to out.raw" << endl;
+        cout << "Exiting..." << endl;
+        return 0;
+    }
+
     string save;
     cout << "Save output vectors? [y/n] ";
     getline(cin, save);
@@ -166,9 +206,19 @@ int main(int argc, char** argv)
     return ret;
 }
 
-/* Callback function called from bg thread in ngspice to transfer
-any string created by printf or puts. Output to stdout in ngspice is
-preceded by token stdout, same with stderr.*/
+/********************************************************************************
+NGSPICE CALLBACK FUNCTIONS
+
+The following functions are used as callbacks for the Ngspice background thread
+to communicate with the main thread of execution.
+
+They are set using the calls to ngSpice_Init and ngSpice_InitSync above.
+
+Chapter 19 of the manual contains more information about these callbacks.
+*********************************************************************************/
+
+/* Transfer any string created by printf or puts. 
+Output to stdout in ngspice is preceded by token stdout, same with stderr. */
 int
 ng_getchar(char* outputreturn, int ident, void* userdata)
 {
@@ -180,6 +230,7 @@ ng_getchar(char* outputreturn, int ident, void* userdata)
 }
 
 
+/* Transfer status messages */
 int
 ng_getstat(char* outputreturn, int ident, void* userdata)
 {
@@ -187,6 +238,7 @@ ng_getstat(char* outputreturn, int ident, void* userdata)
     return 0;
 }
 
+/* Called when the bg thread starts/stops running */
 int
 ng_thread_runs(bool noruns, int ident, void* userdata)
 {   
@@ -204,7 +256,7 @@ ng_thread_runs(bool noruns, int ident, void* userdata)
 }
 
 
-/* Callback function called from bg thread in ngspice once upon intialization
+/* Called from bg thread in ngspice once upon intialization
    of the simulation vectors)*/
 int
 ng_initdata(pvecinfoall intdata, int ident, void* userdata)
@@ -219,7 +271,7 @@ ng_initdata(pvecinfoall intdata, int ident, void* userdata)
 
 
 /* Callback function called from bg thread in ngspice if fcn controlled_exit()
-   is hit. Do not exit, but unload ngspice. */
+   is hit. Do not exit, but unload ngspice. TODO: Is this right? */
 int
 ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* userdata)
 {
@@ -243,26 +295,12 @@ ng_exit(int exitstatus, bool immediate, bool quitexit, int ident, void* userdata
     return exitstatus;
 }
 
+/* Called when the simulation needs a value from an external element */
 int
-ng_getvoltage(double* voltage, double t, char* node, int ident, void* userdata)
+ng_getexternal(double* voltage, double t, char* node, int ident, void* userdata)
 {   
     *voltage = n.get_boundary_condition(node, t);
     return 0;
-}
-
-/* Case insensitive str eq. */
-/* Like strcasecmp( ) XXX */
-int
-cieq(register char *p, register char *s)
-{
-    while (*p) {
-        if ((isupper(*p) ? tolower(*p) : *p) !=
-            (isupper(*s) ? tolower(*s) : *s))
-            return(false);
-        p++;
-        s++;
-    }
-    return (*s ? false : true);
 }
 
 /* Case insensitive prefix. */
