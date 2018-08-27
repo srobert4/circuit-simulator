@@ -6,7 +6,7 @@ This program is intended to allow you to run simulations using Ngspice from the 
 This program will run the commands listed in the file provided, then offer to save any or all of the resulting vectors in ASCII or compact binary format.
 
 ### Prerequisites
-This program requires Ngspice installed with the shared library. Download the tarball from [!here](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/28/ngspice-28.tar.gz/download) or clone the git repository with the command `git clone git://git.code.sf.net/p/ngspice/ngspice` and follow the instructions in the file `INSTALL` in the top level `ngspice` directory. Use the flag `--with-ngshared` to the `./configure` command.
+This program requires Ngspice installed with the shared library. Download the tarball from [here](https://sourceforge.net/projects/ngspice/files/ng-spice-rework/28/ngspice-28.tar.gz/download) or clone the git repository with the command `git clone git://git.code.sf.net/p/ngspice/ngspice` and follow the instructions in the file `INSTALL` in the top level `ngspice` directory. Use the flag `--with-ngshared` to the `./configure` command.
 
 ### To run the program
 Type `make` to compile the simulator executable.
