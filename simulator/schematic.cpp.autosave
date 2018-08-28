@@ -46,9 +46,6 @@ void Schematic::setElementProperties(CircuitElement::ElementProperties propertie
  * Adds a new element to the Schematic centered at
  * the last point clicked with the mouse, with the currently
  * selected properties.
- *
- * This function also creates two nodes, one for each
- * end of the element.
  */
 void Schematic::addElement() {
     CircuitElement *elem = new CircuitElement(elementProperties);
@@ -136,10 +133,10 @@ QPointF Schematic::gridPos(QPointF point)
     return gridPos(point.x(), point.y());
 }
 
-/* Privat Functino: simulate(bool)
+/* Privat Function: simulate(bool)
  * -------------------------------
  * Initialize a new netlist and
- * carry out simulation (bool = false)
+ * carry out simulation (saveOnly = false)
  * or save.
  */
 void Schematic::simulate(bool saveOnly)
