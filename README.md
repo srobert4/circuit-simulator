@@ -28,7 +28,7 @@ The `GenBC` project is in testing stage, and further explanation of the code is 
 * The way wires are drawn right now may not be ideal for further development (one segment of each wire is drawn by each node in the connection, the way the segments are assigned isn't the most aesthetic and isn't dynamic)
 * The model parsing algorithm hasn't been rigorously tested
 * Very occasionally, an element will jump to the top left corner of the window when clicked and dragged
-* The Ngspice callback ControlledExit ignores the bool arguments given because the documentation is very confusing
+* The Ngspice callback `ControlledExit` ignores the bool arguments given because the documentation is very confusing
 
 ### TODO / Vision
 ###### For the `simulator` GUI
